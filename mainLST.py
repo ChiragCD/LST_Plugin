@@ -1,24 +1,29 @@
-## Main class: mainLST
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtWidgets import *
 
-class mainLST(object):
+## Main class: LSTplugin
 
-"""
-Initialiser
-Inputs:
-    iface - qgis.gui.QgisInterface
-Outputs:
-    mainLST object (implicitly)
-"""
+class LSTplugin(object):
+
+    """Main plugin object"""
 
     def __init__(self, iface):
 
+        """
+        Initialiser
+        Inputs:
+            iface - qgis.gui.QgisInterface
+        Outputs:
+            mainLST object (implicitly)
+        """
+
         self.iface = iface
 
-"""
-Called when loaded
-"""
-
     def initGui(self):
+
+        """
+        Called when loaded
+        """
 
         self.action = QAction(
                 icon=QIcon(":/plugins/LST_Plugin/icon.png"),
@@ -30,19 +35,19 @@ Called when loaded
         self.iface.addToolBarIcon(self.action)
         self.iface.addPluginToMenu("LST plugin", self.action)
 
-"""
-Called when unloaded
-"""
-
     def unload(self):
+
+        """
+        Called when unloaded
+        """
 
         self.iface.removePluginMenu("LST plugin", self.action)
         self.iface.removeToolBarIcon(self.action)
 
-"""
-Called when plugin asked to run
-"""
-
     def run(self):
+
+        """
+        Called when plugin asked to run
+        """
 
         print("Running")
