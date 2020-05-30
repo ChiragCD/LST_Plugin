@@ -1,7 +1,12 @@
 from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtCore import *
+
+# neccesary
+from . import form
 
 ## Main class: LSTplugin
+
 
 class LSTplugin(object):
 
@@ -26,9 +31,10 @@ class LSTplugin(object):
         """
 
         self.action = QAction(
-                icon=QIcon(":/plugins/LST_Plugin/icon.png"),
-                text = "LST plugin",
-                parent = self.iface.mainWindow())
+            icon=QIcon(":/plugins/LST_Plugin/icon.png"),
+            text="LST plugin",
+            parent=self.iface.mainWindow(),
+        )
         self.action.triggered.connect(self.run)
 
         ## Add to interface
@@ -51,3 +57,6 @@ class LSTplugin(object):
         """
 
         print("Running")
+
+        window = form.MainWindow()
+        window.show()
