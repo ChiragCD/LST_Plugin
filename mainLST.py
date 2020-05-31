@@ -12,6 +12,8 @@ from . import form, procedures, fileio
 
 class LSTplugin(object):
 
+    iface = None
+
     """Main plugin object"""
 
     def __init__(self, iface):
@@ -25,6 +27,7 @@ class LSTplugin(object):
         """
 
         self.iface = iface
+        LSTplugin.iface = iface     ## Used only by processAll, below
 
     def initGui(self):
 
@@ -87,3 +90,6 @@ def processAll(filePaths, resultStates, satType):
     for i in range(6):
         if(resultStates[i]):
             fileio.saveArray(results[i], outfolder + "/" + resultName[i] + ".TIF")
+            LSTplugin.iface.addRasterLayer(outfolder + "/" + resultName[i] + ".TIF", resultName[i])
+
+    return 0
