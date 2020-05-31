@@ -1,14 +1,8 @@
 from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
-from PIL import Image
-from zipfile import ZipFile
-import numpy
 
-from . import procedures, fileio
-
-# import procedures
-import os
+from . import mainLST
 
 class MainWindow(QMainWindow):
 
@@ -22,8 +16,6 @@ class MainWindow(QMainWindow):
     def __init__(self):
 
         super(MainWindow, self).__init__()
-
-        self.logfile = open("logfile.txt", "w")
 
         self.filePaths = dict()
         self.checkboxes = []
@@ -102,57 +94,14 @@ class MainWindow(QMainWindow):
 
     def goFunc(self):
 
-        if len(self.filePaths) != 3:
-            self.logfile.write("An error occured\n" + str(self.filePaths))
-            self.logfile.close()
-            self.close()
-            return
-
-        self.logfile.write("goFunc entered successfully\n")
-        self.logfile.flush()
-
         resultStates = []
         for box in self.checkboxes:
             resultStates.append(box.isChecked())
 
         satType = self.radios[0].text() if self.radios[0].isChecked() else self.radios[1].text()
 
-        band = fileio.loadBands(self.filePaths)
+        mainLST.processAll(self.filePaths, resultStates, satType)
 
-        outfolder = self.filePaths["Thermal-IR"]
-        outfolder = outfolder[:self.filePaths["Thermal-IR"].rfind("/")] + "/LSTPluginResults"
-
-        self.logfile.write("filePaths loaded\n")
-        self.logfile.flush()
-
-        results = procedures.process(
-            band["Red"], band["Near-IR"], band["Thermal-IR"], satType
-        )
-
-        self.logfile.write("Processing complete\n")
-        self.logfile.flush()
-
-        # os.mkdir("LSTPluginResults")
-        while(os.path.isdir(outfolder)):
-            if(outfolder[-1].isnumeric()):
-                outfolder = outfolder[:-1] + str(1 + int(outfolder[-1]))
-            else:
-                outfolder += "1"
-        os.makedirs(outfolder)
-
-        # zipObj = ZipFile.open("results.zip", "w")
-
-        resultName = ["TOA", "BT", "NDVI", "PV", "LSE", "LST"]
-
-        for i in range(6):
-            if(resultStates[i]):
-                fileio.saveArray(results[i], outfolder + "/" + resultName[i] + ".TIF")
-
-        self.logfile.write("All done\n")
-        self.logfile.flush()
-
-        self.logfile.close()
         self.close()
-        # output the data as a file
 
 
