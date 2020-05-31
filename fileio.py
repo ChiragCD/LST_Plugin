@@ -17,3 +17,18 @@ def loadBands(filepaths):
         im = Image.open(filepaths[band])
         bands[band] = np.array(im, dtype = np.int16)
     return bands
+
+def saveArray(array, fname):
+
+    """
+    Saves array as tiff file fname
+
+    Inputs:
+        array - numpy array
+        fname - str
+    Outputs:
+        None
+    """
+
+    im = Image.fromarray(array)
+    im.save(fname)

@@ -1,4 +1,3 @@
-import qgis
 from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
@@ -105,7 +104,6 @@ class MainWindow(QMainWindow):
 
         if len(self.filePaths) != 3:
             self.logfile.write("An error occured\n" + str(self.filePaths))
-            qgis.core.QgsMessageLog.logMessage("Your plugin code has been executed correctly" + str(self.filePaths))
             self.logfile.close()
             self.close()
             return
@@ -121,10 +119,13 @@ class MainWindow(QMainWindow):
 
         band = fileio.loadBands(self.filePaths)
 
+        outfolder = self.filePaths["Thermal-IR"]
+        outfolder = outfolder[:self.filePaths["Thermal-IR"].rfind("/")] + "/LSTPluginResults"
+
         self.logfile.write("filePaths loaded\n")
         self.logfile.flush()
 
-        toa, bt, ndvi, pv, lse, lst = procedures.process(
+        results = procedures.process(
             band["Red"], band["Near-IR"], band["Thermal-IR"], satType
         )
 
@@ -132,28 +133,20 @@ class MainWindow(QMainWindow):
         self.logfile.flush()
 
         # os.mkdir("LSTPluginResults")
-        os.makedirs("~/LSTPluginResults")
+        while(os.path.isdir(outfolder)):
+            if(outfolder[-1].isnumeric()):
+                outfolder = outfolder[:-1] + str(1 + int(outfolder[-1]))
+            else:
+                outfolder += "1"
+        os.makedirs(outfolder)
 
         # zipObj = ZipFile.open("results.zip", "w")
 
-        if resultStates[0]:
-            toaIm = Image.fromarray(toa)
-            toaIm.save("~/LSTPluginResults/TOA.tiff")
-        if resultStates[1]:
-            btIm = Image.fromarray(bt)
-            btIm.save("~/LSTPluginResults/BT.tiff")
-        if resultStates[2]:
-            ndviIm = Image.fromarray(ndvi)
-            ndviIm.save("~/LSTPluginResults/NDVI.tiff")
-        if resultStates[3]:
-            pvIm = Image.fromarray(pv)
-            pvIm.save("~/LSTPluginResults/PV.tiff")
-        if resultStates[4]:
-            lseIm = Image.fromarray(lse)
-            lseIm.save("~/LSTPluginResults/LSE.tiff")
-        if resultStates[5]:
-            lstIm = Image.fromarray(lst)
-            lstIm.save("~/LSTPluginResults/LST.tiff")
+        resultName = ["TOA", "BT", "NDVI", "PV", "LSE", "LST"]
+
+        for i in range(6):
+            if(resultStates[i]):
+                fileio.saveArray(results[i], outfolder + "/" + resultName[i] + ".TIF")
 
         self.logfile.write("All done\n")
         self.logfile.flush()
