@@ -169,4 +169,4 @@ class MainWindow(QMainWindow):
 def loadBands(fp):
     for path in fp:
         im = Image.open(path[0])
-        band[path[1] % 4] = numpy.array(im)
+        band[path[1] % 4] = numpy.array(im, dtype = numpy.int16)
