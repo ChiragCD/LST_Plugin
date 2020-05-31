@@ -53,7 +53,7 @@ def calc_PV(ndvi):
         pv - numpy array
     """
 
-    data = {"ndvi_soil" = 0.2, "ndvi_vegetation" = 0.5}
+    data = {"ndvi_soil" : 0.2, "ndvi_vegetation" : 0.5}
     pv = np.square((ndvi - data["ndvi_soil"]) / (data["ndvi_vegetation"] - data["ndvi_soil"]))
     return pv
 
@@ -84,7 +84,7 @@ def calc_LST(bt, lse):
         lst - numpy array
     """
 
-    data = ["lambda" : 0.00115, "rho" : 1.4388] ##Verify values, only ratio important
+    data = {"lambda" : 0.00115, "rho" : 1.4388} ##Verify values, only ratio important
     lst = bt / (1 + (data["lambda"] * bt / data["rho"]) * np.log(lse))
     return lst
 
@@ -102,7 +102,7 @@ def process(r, nir, tir, sat_type):
     toa = calc_TOA_radiance(tir, sat_type)
     bt = calc_BT(toa, sat_type)
     ndvi = calc_NDVI(nir, r)
-    pv = calc_pv(ndvi)
+    pv = calc_PV(ndvi)
     lse = calc_LSE(ndvi, pv)
     lst = calc_LST(bt, lse)
     return toa, bt, ndvi, pv, lse, lst
