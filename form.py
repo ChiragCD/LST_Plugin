@@ -1,3 +1,4 @@
+import qgis
 from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
@@ -5,98 +6,82 @@ from PIL import Image
 from zipfile import ZipFile
 import numpy
 
-from . import procedures
+from . import procedures, fileio
 
 # import procedures
 import os
 
-fileNames = set()
-filePaths = set()
-resultStates = []
-checkboxes = []
-band = [0, 0, 0]
-radios = []
-
-
 class MainWindow(QMainWindow):
+
+    def addCheckBox(self, text, defaultChecked = False):
+
+        lstcheckbox = QCheckBox(text)
+        lstcheckbox.setChecked(defaultChecked)
+        self.layout.addWidget(lstcheckbox)
+        self.checkboxes.append(lstcheckbox)
+
     def __init__(self):
+
         super(MainWindow, self).__init__()
+
+        self.logfile = open("logfile.txt", "w")
+
+        self.filePaths = dict()
+        self.checkboxes = []
+
         self.setWindowTitle("App")
 
-        layout = QVBoxLayout()
+        self.layout = QVBoxLayout()
 
         # input file option
         label = QLabel()
         label.setText("Input bands")
         label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(label)
+        self.layout.addWidget(label)
 
         # input bands
-        for i in (4, 5, 10):
-            layout.addWidget(self.browseFile(i))
+        for band in ("Red", "Near-IR", "Thermal-IR"):
+            self.layout.addWidget(self.browseFile(band))
 
         # select data type
         dtwidget = QWidget()
         hlayout = QHBoxLayout()
-
         label = QLabel("Select Data type")
-        hlayout.addWidget(label)
-
         lst5button = QRadioButton("Landsat5")
-        radios.append(lst5button)
-        hlayout.addWidget(lst5button)
-
         lst8button = QRadioButton("Landsat8")
         lst8button.setChecked(True)
-        radios.append(lst8button)
+        hlayout.addWidget(label)
+        hlayout.addWidget(lst5button)
         hlayout.addWidget(lst8button)
-
+        self.radios = [lst5button, lst8button]
         dtwidget.setLayout(hlayout)
-        layout.addWidget(dtwidget)
+        self.layout.addWidget(dtwidget)
 
         # select output types lable
         label = QLabel()
         label.setText("Select Output types")
         label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(label)
+        self.layout.addWidget(label)
 
         # checkbox for various outputs
-        toacheckbox = QCheckBox("TOA Spectral Radiance")
-        layout.addWidget(toacheckbox)
-        checkboxes.append(toacheckbox)
-
-        btcheckbox = QCheckBox("At Sensor Brightness Temperature")
-        layout.addWidget(btcheckbox)
-        checkboxes.append(btcheckbox)
-
-        ndvicheckbox = QCheckBox("NDVI")
-        layout.addWidget(ndvicheckbox)
-        checkboxes.append(ndvicheckbox)
-
-        pvcheckbox = QCheckBox("Proportion of Vegetation")
-        layout.addWidget(pvcheckbox)
-        checkboxes.append(pvcheckbox)
-
-        lsecheckbox = QCheckBox("Land Surface Emissivity")
-        layout.addWidget(lsecheckbox)
-        checkboxes.append(lsecheckbox)
-
-        lstcheckbox = QCheckBox("LST")
-        lstcheckbox.setChecked(True)
-        layout.addWidget(lstcheckbox)
-        checkboxes.append(lstcheckbox)
+        self.addCheckBox("TOA Spectral Radiance")
+        self.addCheckBox("At Sensor Brightness Temperature")
+        self.addCheckBox("NDVI")
+        self.addCheckBox("Proportion of Vegetation")
+        self.addCheckBox("Land Surface Emissivity")
+        self.addCheckBox("LST", defaultChecked = True)
         # check through ischecked()
 
         # go button
         goButton = QPushButton("Go")
         goButton.clicked.connect(self.goFunc)
-        layout.addWidget(goButton)
+        self.layout.addWidget(goButton)
 
         mainWidget = QWidget()
-        mainWidget.setLayout(layout)
+        mainWidget.setLayout(self.layout)
         self.setCentralWidget(mainWidget)
 
-    def browseFile(self, num):
+    def browseFile(self, band):
         filesel = QWidget()
         hlayout = QHBoxLayout()
 
@@ -105,40 +90,49 @@ class MainWindow(QMainWindow):
         hlayout.addWidget(pathField)
 
         selband = QPushButton()
-        selband.setText("Select Band " + str(num))
-        selband.clicked.connect(lambda: self.getFiles(pathField, num))
+        selband.setText("Select " + band + " Band file")
+        selband.clicked.connect(lambda: self.getFiles(pathField, band))
         hlayout.addWidget(selband)
         filesel.setLayout(hlayout)
         return filesel
 
-    def getFiles(self, pathField, num):
+    def getFiles(self, pathField, band):
         fp = QFileDialog.getOpenFileName()
-        # print(fp[0])
         pathField.setText(fp[0])
-        if not fileNames.__contains__(fp[0]):
-            fileNames.add(fp[0])
-            filePaths.add((fp[0], num))
+        self.filePaths[band] = fp[0]
 
     def goFunc(self):
 
-        if len(fileNames) != 3:
-            print("An error occured")
+        if len(self.filePaths) != 3:
+            self.logfile.write("An error occured\n" + str(self.filePaths))
+            qgis.core.QgsMessageLog.logMessage("Your plugin code has been executed correctly" + str(self.filePaths))
+            self.logfile.close()
+            self.close()
             return
 
-        for box in checkboxes:
+        self.logfile.write("goFunc entered successfully\n")
+        self.logfile.flush()
+
+        resultStates = []
+        for box in self.checkboxes:
             resultStates.append(box.isChecked())
 
-        satType = radios[0].text() if radios[0].isChecked() else radios[1].text()
+        satType = self.radios[0].text() if self.radios[0].isChecked() else self.radios[1].text()
 
-        loadBands(filePaths)
+        band = fileio.loadBands(self.filePaths)
+
+        self.logfile.write("filePaths loaded\n")
+        self.logfile.flush()
 
         toa, bt, ndvi, pv, lse, lst = procedures.process(
-            band[0], band[1], band[2], satType
+            band["Red"], band["Near-IR"], band["Thermal-IR"], satType
         )
+
+        self.logfile.write("Processing complete\n")
+        self.logfile.flush()
 
         # os.mkdir("LSTPluginResults")
         os.makedirs("~/LSTPluginResults")
-        print(resultStates[5])
 
         # zipObj = ZipFile.open("results.zip", "w")
 
@@ -160,13 +154,12 @@ class MainWindow(QMainWindow):
         if resultStates[5]:
             lstIm = Image.fromarray(lst)
             lstIm.save("~/LSTPluginResults/LST.tiff")
-        print("All done")
 
+        self.logfile.write("All done\n")
+        self.logfile.flush()
+
+        self.logfile.close()
         self.close()
         # output the data as a file
 
 
-def loadBands(fp):
-    for path in fp:
-        im = Image.open(path[0])
-        band[path[1] % 4] = numpy.array(im, dtype = numpy.int16)
