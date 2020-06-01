@@ -61,9 +61,7 @@ class LSTplugin(object):
         Called when plugin asked to run
         """
 
-        print("Running")
-
-        window = form.MainWindow()
+        window = form.MainWindow(self.iface)
         window.show()
 
 

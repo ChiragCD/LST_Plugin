@@ -13,12 +13,20 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(lstcheckbox)
         self.checkboxes.append(lstcheckbox)
 
-    def __init__(self):
+    def __init__(self, iface):
 
+        self.iface = iface
+        print(self.iface.mapCanvas().layers())
         super(MainWindow, self).__init__()
 
         self.filePaths = dict()
         self.checkboxes = []
+        self.layerInfor = dict()
+        layers = iface.mapCanvas().layers()
+        for layer in layers:
+            self.layerInfor[layer.name()] = layer.dataProvider().dataSourceUri()
+
+        # print(self.layerInfor)
 
         self.setWindowTitle("App")
 
@@ -80,12 +88,27 @@ class MainWindow(QMainWindow):
         pathField.setText("...")
         hlayout.addWidget(pathField)
 
+        selLayer = QComboBox()
+        selLayer.addItem("Select from current Layer")
+        for name in self.layerInfor:
+            selLayer.addItem(name)
+        selLayer.activated.connect(
+            lambda: self.getLayers(
+                pathField, self.layerInfor[selLayer.currentText()], band
+            )
+        )
+        hlayout.addWidget(selLayer)
+
         selband = QPushButton()
         selband.setText("Select " + band + " Band file")
         selband.clicked.connect(lambda: self.getFiles(pathField, band))
         hlayout.addWidget(selband)
         filesel.setLayout(hlayout)
         return filesel
+
+    def getLayers(self, pathField, addr, band):
+        pathField.setText(addr)
+        self.filePaths[band] = addr
 
     def getFiles(self, pathField, band):
         fp = QFileDialog.getOpenFileName()
@@ -104,12 +127,6 @@ class MainWindow(QMainWindow):
             else self.radios[1].text()
         )
 
-        messageBox = QMessageBox()
-        messageBox.information(
-            None, "Working", "Processing the data, Please wait for a few minutes"
-        )
-
         mainLST.processAll(self.filePaths, resultStates, satType)
 
-        messageBox.close()
         self.close()
