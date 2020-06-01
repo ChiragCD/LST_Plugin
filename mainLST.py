@@ -65,8 +65,15 @@ class LSTplugin(object):
 
 def processAll(filePaths, resultStates, satType):
 
-    if len(filePaths) != 3:
-        return 1
+    toa, bt, ndvi, pv, lse, lst = resultStates
+
+    if not(filePaths["Thermal-IR"]) and (toa or bt or lst):
+        return "Thermal-IR file missing"
+    if not(filePaths["Red"] and filePaths["Near-IR"]) and (ndvi or pv or lse or lst)):
+        if(not(filePaths["Red"])):
+            return "Red file missing"
+        if(not(filePaths["Near-IR"])):
+            return "Near-IR file missing"
 
     band = fileio.loadBands(filePaths)
 
