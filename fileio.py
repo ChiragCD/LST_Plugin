@@ -19,7 +19,7 @@ def loadBands(filepaths):
     bands = dict()
     for band in filepaths:
         im = gdal.Open(filepaths[band])
-        bands[band] = im.ReadAsArray().view(dtype = np.float16)
+        bands[band] = im.ReadAsArray().astype('int16')
     sampleDS = im
     return bands
 
