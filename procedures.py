@@ -94,7 +94,7 @@ def calc_LSE(ndvi, pv):
             pv[np.logical_and(ndvi >= 0.2, ndvi < 0.5)] * \
             (data["vegetation_emissivity"] - data["soil_emissivity"])
             )
-    lse[ndvi > 0.5] = data["vegetation_emissivity"]
+    lse[ndvi >= 0.5] = data["vegetation_emissivity"]
     return lse
 
 
@@ -112,6 +112,13 @@ def calc_LST(bt, lse):
     lst = bt / (1 + (data["lambda"] * bt / data["rho"]) * np.log(lse))
     return lst
 
+def getBand(bandName, bands, mask):
+    if(bandName in bands):
+        band = bands[bandName]
+        band[np.logical_not(mask)] = np.nan
+        return band
+    else:
+        return None
 
 def process(bands, sat_type, required):
 
@@ -130,30 +137,9 @@ def process(bands, sat_type, required):
     for layer in list(bands.values()):
         mask[layer == 0] = False
 
-    if("Red" in bands):
-        r = bands["Red"]
-        r_new = np.full(r.shape, np.nan)
-        r_new[mask] = r[mask]
-        r = r_new
-        del r_new
-    else:
-        r = np.array([])
-    if("Near-IR" in bands):
-        nir = bands["Near-IR"]
-        nir_new = np.full(nir.shape, np.nan)
-        nir_new[mask] = nir[mask]
-        nir = nir_new
-        del nir_new
-    else:
-        nir = np.array([])
-    if("Thermal-IR" in bands):
-        tir = bands["Thermal-IR"]
-        tir_new = np.full(tir.shape, np.nan)
-        tir_new[mask] = tir[mask]
-        tir = tir_new
-        del tir_new
-    else:
-        tir = np.array([])
+    r = getBand("Red", bands, mask)
+    nir = getBand("Near-IR", bands, mask)
+    tir = getBand("Thermal-IR", bands, mask)
 
     toa, bt, ndvi, pv, lse, lst = required
 
