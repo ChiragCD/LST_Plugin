@@ -4,9 +4,9 @@ from qgis.PyQt.QtCore import *
 
 from . import mainLST
 
-class MainWindow(QMainWindow):
 
-    def addCheckBox(self, text, defaultChecked = False):
+class MainWindow(QMainWindow):
+    def addCheckBox(self, text, defaultChecked=False):
 
         lstcheckbox = QCheckBox(text)
         lstcheckbox.setChecked(defaultChecked)
@@ -60,7 +60,7 @@ class MainWindow(QMainWindow):
         self.addCheckBox("NDVI")
         self.addCheckBox("Proportion of Vegetation")
         self.addCheckBox("Land Surface Emissivity")
-        self.addCheckBox("LST", defaultChecked = True)
+        self.addCheckBox("LST", defaultChecked=True)
         # check through ischecked()
 
         # go button
@@ -98,10 +98,18 @@ class MainWindow(QMainWindow):
         for box in self.checkboxes:
             resultStates.append(box.isChecked())
 
-        satType = self.radios[0].text() if self.radios[0].isChecked() else self.radios[1].text()
+        satType = (
+            self.radios[0].text()
+            if self.radios[0].isChecked()
+            else self.radios[1].text()
+        )
+
+        messageBox = QMessageBox()
+        messageBox.information(
+            None, "Working", "Processing the data, Please wait for a few minutes"
+        )
 
         mainLST.processAll(self.filePaths, resultStates, satType)
 
+        messageBox.close()
         self.close()
-
-

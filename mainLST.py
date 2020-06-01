@@ -27,7 +27,7 @@ class LSTplugin(object):
         """
 
         self.iface = iface
-        LSTplugin.iface = iface     ## Used only by processAll, below
+        LSTplugin.iface = iface  ## Used only by processAll, below
 
     def initGui(self):
 
@@ -66,6 +66,7 @@ class LSTplugin(object):
         window = form.MainWindow()
         window.show()
 
+
 def processAll(filePaths, resultStates, satType):
 
     if len(filePaths) != 3:
@@ -74,12 +75,14 @@ def processAll(filePaths, resultStates, satType):
     band = fileio.loadBands(filePaths)
 
     outfolder = filePaths["Thermal-IR"]
-    outfolder = outfolder[:filePaths["Thermal-IR"].rfind("/")] + "/LSTPluginResults"
+    outfolder = outfolder[: filePaths["Thermal-IR"].rfind("/")] + "/LSTPluginResults"
 
-    results = procedures.process(band["Red"], band["Near-IR"], band["Thermal-IR"], satType)
+    results = procedures.process(
+        band["Red"], band["Near-IR"], band["Thermal-IR"], satType
+    )
 
-    while(os.path.isdir(outfolder)):
-        if(outfolder[-1].isnumeric()):
+    while os.path.isdir(outfolder):
+        if outfolder[-1].isnumeric():
             outfolder = outfolder[:-1] + str(1 + int(outfolder[-1]))
         else:
             outfolder += "1"
@@ -88,8 +91,10 @@ def processAll(filePaths, resultStates, satType):
     resultName = ["TOA", "BT", "NDVI", "PV", "LSE", "LST"]
 
     for i in range(6):
-        if(resultStates[i]):
+        if resultStates[i]:
             fileio.saveArray(results[i], outfolder + "/" + resultName[i] + ".TIF")
-            LSTplugin.iface.addRasterLayer(outfolder + "/" + resultName[i] + ".TIF", resultName[i])
+            LSTplugin.iface.addRasterLayer(
+                outfolder + "/" + resultName[i] + ".TIF", resultName[i]
+            )
 
     return 0
