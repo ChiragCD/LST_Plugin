@@ -90,6 +90,8 @@ class MainWindow(QMainWindow):
 
         selLayer = QComboBox()
         selLayer.addItem("Select from current Layer")
+        self.layerInfor["Select from current Layer"] = "..."
+
         for name in self.layerInfor:
             selLayer.addItem(name)
         selLayer.activated.connect(
@@ -130,3 +132,8 @@ class MainWindow(QMainWindow):
         mainLST.processAll(self.filePaths, resultStates, satType)
 
         self.close()
+
+
+def showError(err):
+    messageBox = QMessageBox()
+    messageBox.critical(None, "", err)
