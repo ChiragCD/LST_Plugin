@@ -84,12 +84,12 @@ class MainWindow(QMainWindow):
         hlayout = QHBoxLayout()
 
         pathField = QLineEdit()
-        pathField.setText("...")
+        pathField.setText(band)
         hlayout.addWidget(pathField)
 
         selLayer = QComboBox()
-        selLayer.addItem("Select from current Layer")
-        self.layerInfor["Select from current Layer"] = "..."
+        selLayer.addItem("Select a Layer")
+        self.layerInfor["Select a Layer"] = "Select a layer"
 
         for name in self.layerInfor:
             selLayer.addItem(name)
@@ -101,18 +101,22 @@ class MainWindow(QMainWindow):
         hlayout.addWidget(selLayer)
 
         selband = QPushButton()
-        selband.setText("Select " + band + " Band file")
+        selband.setText("Select a file")
         selband.clicked.connect(lambda: self.getFiles(pathField, band))
         hlayout.addWidget(selband)
         filesel.setLayout(hlayout)
         return filesel
 
     def getLayers(self, pathField, addr, band):
+        if(addr == "Select a layer"):
+            return
         pathField.setText(addr)
         self.filePaths[band] = addr
 
     def getFiles(self, pathField, band):
         fp = QFileDialog.getOpenFileName()
+        if(not(fp[0])):
+            return
         pathField.setText(fp[0])
         self.filePaths[band] = fp[0]
 
