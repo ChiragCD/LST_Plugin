@@ -1,5 +1,7 @@
 import numpy as np
-from PIL import Image
+import gdal
+
+sampleDS = None
 
 def loadBands(filepaths):
 
@@ -12,10 +14,13 @@ def loadBands(filepaths):
         bands - dictionary of bandnames (str) to 2d numpy arrays (int16)
     """
 
+    global sampleDS
+
     bands = dict()
     for band in filepaths:
-        im = Image.open(filepaths[band])
-        bands[band] = np.array(im, dtype = np.int16)
+        im = gdal.Open(filepaths[band])
+        bands[band] = im.ReadAsArray()
+    sampleDS = im
     return bands
 
 def saveArray(array, fname):
@@ -30,5 +35,22 @@ def saveArray(array, fname):
         None
     """
 
-    im = Image.fromarray(array)
-    im.save(fname)
+    global sampleDS
+    rows = sampleDS.RasterYSize
+    cols = sampleDS.RasterXSize
+    driver = sampleDS.GetDriver()
+
+    outDS = driver.Create(fname, cols, rows, bands=1, eType = gdal.GDT_Float32)
+    outBand = outDS.GetRasterBand(1)
+    outBand.WriteArray(array)
+    outBand.FlushCache()
+    outDS.SetGeoTransform(sampleDS.GetGeoTransform())
+    outDS.SetProjection(sampleDS.GetProjection())
+
+    del outDS
+
+    """
+    DavidF's answer at
+    https://gis.stackexchange.com/questions/37238/writing-numpy-array-to-raster-file
+    was incredibly useful.
+    """
