@@ -33,7 +33,7 @@ def calc_BT(toa, sat_type):
     """
 
     data = {
-        "Landsat8": {"K1": 1321.0789, "K2": 774.8853},
+        "Landsat8": {"K1": 774.8853, "K2" :1321.0789},
         "Landsat5": {"K1": 607.76, "K2": 1260.56},
     }
     bt = (data[sat_type]["K2"] / np.log((data[sat_type]["K1"] / toa) + 1)) - 273.15
