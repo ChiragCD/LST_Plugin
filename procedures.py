@@ -110,7 +110,7 @@ def calc_LST(bt, lse):
     return lst
 
 
-def process(r, nir, tir, sat_type):
+def process(r, nir, tir, sat_type, required):
 
     """
     Interfacing function, follows steps and returns all subparts
@@ -121,10 +121,25 @@ def process(r, nir, tir, sat_type):
         toa, bt, ndvi, pv, lse, lst - numpy arrays
     """
 
-    toa = calc_TOA_radiance(tir, sat_type)
-    bt = calc_BT(toa, sat_type)
-    ndvi = calc_NDVI(nir, r)
-    pv = calc_PV(ndvi)
-    lse = calc_LSE(ndvi, pv)
-    lst = calc_LST(bt, lse)
-    return toa, bt, ndvi, pv, lse, lst
+    toa, bt, ndvi, pv, lse, lst = required
+
+    results = dict()
+    if(toa or bt or lst):
+        toa = calc_TOA_radiance(tir, sat_type)
+        results["TOA"] = toa
+    if(bt or lst):
+        bt = calc_BT(toa, sat_type)
+        results["BT"] = bt
+    if(ndvi or pv or lse or lst):
+        ndvi = calc_NDVI(nir, r)
+        results["NDVI"] = ndvi
+    if(pv or lse or lst):
+        pv = calc_PV(ndvi)
+        results["PV"] = pv
+    if(lse or lst):
+        lse = calc_LSE(ndvi, pv)
+        results["LSE"] = lse
+    if(lst):
+        lst = calc_LST(bt, lse)
+        results["LST"] = lst
+    return results

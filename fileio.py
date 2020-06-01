@@ -19,7 +19,7 @@ def loadBands(filepaths):
     bands = dict()
     for band in filepaths:
         im = gdal.Open(filepaths[band])
-        bands[band] = im.ReadAsArray()
+        bands[band] = im.ReadAsArray().view(dtype = np.float16)
     sampleDS = im
     return bands
 
@@ -48,6 +48,7 @@ def saveArray(array, fname):
     outDS.SetProjection(sampleDS.GetProjection())
 
     del outDS
+    del array
 
     """
     DavidF's answer at
