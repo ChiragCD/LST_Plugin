@@ -86,11 +86,14 @@ def calc_LSE(ndvi, pv):
         "soil_emissivity": 0.996,
         "vegetation_emissivity": 0.973,
     }
-    lse = np.full(ndvi.shape, data["water_emissivity"])
-    lse[ndvi > 0] = data["soil_emissivity"]
-    lse[ndvi > 0.2] += pv[ndvi > 0.2] * (
-        data["vegetation_emissivity"] - data["soil_emissivity"]
-    )
+    lse = np.full(ndvi.shape, np.nan)
+    lse[ndvi < 0] = data["water_emissivity"]
+    lse[np.logical_and(ndvi >= 0, ndvi < 0.2)] = data["soil_emissivity"]
+    lse[np.logical_and(ndvi >= 0.2, ndvi < 0.5)] = (
+            data["soil_emissivity"] + \
+            pv[np.logical_and(ndvi >= 0.2, ndvi < 0.5)] * \
+            (data["vegetation_emissivity"] - data["soil_emissivity"])
+            )
     lse[ndvi > 0.5] = data["vegetation_emissivity"]
     return lse
 
