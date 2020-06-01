@@ -62,8 +62,6 @@ class LSTplugin(object):
         window = form.MainWindow(self.iface)
         window.show()
 
-        form.showError("asdf")
-
 
 def processAll(filePaths, resultStates, satType):
 

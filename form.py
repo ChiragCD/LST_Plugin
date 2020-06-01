@@ -61,7 +61,6 @@ class MainWindow(QMainWindow):
         label.setText("Select Output types")
         label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(label)
-
         # checkbox for various outputs
         self.addCheckBox("TOA Spectral Radiance")
         self.addCheckBox("At Sensor Brightness Temperature")
