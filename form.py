@@ -132,10 +132,9 @@ class MainWindow(QMainWindow):
             else self.radios[1].text()
         )
 
-        mainLST.processAll(self.filePaths, resultStates, satType)
-
-        self.close()
-
+        error = mainLST.processAll(self.filePaths, resultStates, satType)
+        if(error):
+            showError(error)
 
 def showError(err):
     messageBox = QMessageBox()
