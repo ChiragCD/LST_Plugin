@@ -75,14 +75,12 @@ def processAll(filePaths, resultStates, satType):
         if("Near-IR" not in filePaths):
             return "Near-IR file missing"
 
-    band = fileio.loadBands(filePaths)
+    bands = fileio.loadBands(filePaths)
 
     outfolder = filePaths["Thermal-IR"]
     outfolder = outfolder[: filePaths["Thermal-IR"].rfind("/")] + "/LSTPluginResults"
 
-    results = procedures.process(
-        band["Red"], band["Near-IR"], band["Thermal-IR"], satType, resultStates
-    )
+    results = procedures.process(bands, satType, resultStates)
 
     while os.path.isdir(outfolder):
         if outfolder[-1].isnumeric():

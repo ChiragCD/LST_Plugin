@@ -110,7 +110,7 @@ def calc_LST(bt, lse):
     return lst
 
 
-def process(r, nir, tir, sat_type, required):
+def process(bands, sat_type, required):
 
     """
     Interfacing function, follows steps and returns all subparts
@@ -120,6 +120,37 @@ def process(r, nir, tir, sat_type, required):
     Returns:
         toa, bt, ndvi, pv, lse, lst - numpy arrays
     """
+
+    temp = list(bands.values())[0]
+    mask = np.full(temp.shape, True)
+    del temp
+    for layer in list(bands.values()):
+        mask[layer == 0] = False
+
+    if("Red" in bands):
+        r = bands["Red"]
+        r_new = np.full(r.shape, np.nan)
+        r_new[mask] = r[mask]
+        r = r_new
+        del r_new
+    else:
+        r = np.array([])
+    if("Near-IR" in bands):
+        nir = bands["Near-IR"]
+        nir_new = np.full(nir.shape, np.nan)
+        nir_new[mask] = nir[mask]
+        nir = nir_new
+        del nir_new
+    else:
+        nir = np.array([])
+    if("Thermal-IR" in bands):
+        tir = bands["Thermal-IR"]
+        tir_new = np.full(tir.shape, np.nan)
+        tir_new[mask] = tir[mask]
+        tir = tir_new
+        del tir_new
+    else:
+        tir = np.array([])
 
     toa, bt, ndvi, pv, lse, lst = required
 
