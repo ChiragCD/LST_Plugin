@@ -1,6 +1,7 @@
 from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
+from qgis.utils import iface
 
 import os
 
@@ -11,8 +12,6 @@ from . import form, procedures, fileio
 
 
 class LSTplugin(object):
-
-    iface = None
 
     """Main plugin object"""
 
@@ -27,7 +26,6 @@ class LSTplugin(object):
         """
 
         self.iface = iface
-        LSTplugin.iface = iface  ## Used only by processAll, below
 
     def initGui(self):
 
@@ -92,9 +90,8 @@ def processAll(filePaths, resultStates, satType):
 
     for i in range(6):
         if resultStates[i]:
-            fileio.saveArray(results[i], outfolder + "/" + resultName[i] + ".TIF")
-            LSTplugin.iface.addRasterLayer(
-                outfolder + "/" + resultName[i] + ".TIF", resultName[i]
-            )
+            outfilename = outfolder + "/" + resultName[i] + ".TIF"
+            fileio.saveArray(results[i], outfilename)
+            iface.addRasterLayer(outfilename, resultName[i])
 
     return 0
