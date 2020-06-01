@@ -81,7 +81,7 @@ def processAll(filePaths, resultStates, satType):
     outfolder = outfolder[: filePaths["Thermal-IR"].rfind("/")] + "/LSTPluginResults"
 
     results = procedures.process(
-        band["Red"], band["Near-IR"], band["Thermal-IR"], satType, resultStates
+        band["Red"], band["Near-IR"], band["Thermal-IR"], satType
     )
 
     while os.path.isdir(outfolder):
@@ -96,5 +96,5 @@ def processAll(filePaths, resultStates, satType):
     for i in range(6):
         if resultStates[i]:
             outfilename = outfolder + "/" + resultName[i] + ".TIF"
-            fileio.saveArray(results[resultName[i]], outfilename)
+            fileio.saveArray(results[i], outfilename)
             iface.addRasterLayer(outfilename, resultName[i])
