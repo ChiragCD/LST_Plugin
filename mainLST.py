@@ -77,8 +77,14 @@ def processAll(form, filePaths, resultStates, satType, displayResults = True):
 
     if("zip" in filePaths):
         bands = filer.loadZip(filePaths)
+        satType = bands["sat_type"]
+        del bands["sat_type"]
     else:
         bands = filer.loadBands(filePaths)
+    if(bands["Error"]):
+        form.showError(bands["Error"])
+        return
+    del bands["Error"]
 
     form.showStatus("Processing")
 
