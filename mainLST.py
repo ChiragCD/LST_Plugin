@@ -75,24 +75,20 @@ def processAll(filePaths, resultStates, satType):
         if("Near-IR" not in filePaths):
             return "Near-IR file missing"
 
-    bands = fileio.loadBands(filePaths)
+    filer = fileio.fileHandler()
 
-    outfolder = filePaths["Thermal-IR"]
-    outfolder = outfolder[: filePaths["Thermal-IR"].rfind("/")] + "/LSTPluginResults"
+    band = filer.loadBands(filePaths)
 
     results = procedures.process(bands, satType, resultStates)
 
-    while os.path.isdir(outfolder):
-        if outfolder[-1].isnumeric():
-            outfolder = outfolder[:-1] + str(1 + int(outfolder[-1]))
-        else:
-            outfolder += "1"
-    os.makedirs(outfolder)
 
     resultName = ["TOA", "BT", "NDVI", "PV", "LSE", "LST"]
 
+    outdata = dict()
     for i in range(6):
         if resultStates[i]:
-            outfilename = outfolder + "/" + resultName[i] + ".TIF"
-            fileio.saveArray(results[resultName[i]], outfilename)
-            iface.addRasterLayer(outfilename, resultName[i])
+            outdata[resultName[i]] = results[resultName[i]]
+    filer.saveAll(outdata)
+    for i in range(6):
+        if resultStates[i]:
+            iface.addRasterLayer(filer.generateFileName(resultName[i], "TIF"), resultName[i])
