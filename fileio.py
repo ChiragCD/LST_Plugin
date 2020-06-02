@@ -28,6 +28,9 @@ class fileHandler(object):
         del im
         return array
 
+    def loadZip(self, filePaths):
+        return
+
     def loadBands(self, filepaths):
 
         """

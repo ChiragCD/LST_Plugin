@@ -62,33 +62,40 @@ class LSTplugin(object):
         window = form.MainWindow(self.iface)
         window.show()
 
+def displayOnScreen(resultStates, resultNames, filer):
 
-def processAll(filePaths, resultStates, satType):
+    for i in range(6):
+        if resultStates[i]:
+            iface.addRasterLayer(filer.generateFileName(resultNames[i], "TIF"), resultNames[i])
 
-    toa, bt, ndvi, pv, lse, lst = resultStates
+def processAll(filePaths, resultStates, satType, displayResults = True):
 
-    if "Thermal-IR" not in filePaths and (toa or bt or lst):
-        return "Thermal-IR file missing"
-    if ("Red" not in filePaths or "Near-IR" not in filePaths) and (ndvi or pv or lse or lst):
-        if("Red" not in filePaths):
-            return "Red file missing"
-        if("Near-IR" not in filePaths):
-            return "Near-IR file missing"
+    print("Starting processing")
 
     filer = fileio.fileHandler()
+    processor = procedures.processor()
 
-    bands = filer.loadBands(filePaths)
+    if("zip" in filePaths):
+        bands = filer.loadZip(filePaths)
+    else:
+        bands = filer.loadBands(filePaths)
 
-    results = procedures.process(bands, satType, resultStates)
+    print("Files loaded")
 
+    results = processor.process(bands, satType, resultStates)
+    if(results["Error"]):
+        form.showError(results["Error"])
+        return
+    del results["Error"]
 
-    resultName = ["TOA", "BT", "NDVI", "PV", "LSE", "LST"]
+    print("Results obtained")
 
-    outdata = dict()
-    for i in range(6):
-        if resultStates[i]:
-            outdata[resultName[i]] = results[resultName[i]]
-    filer.saveAll(outdata)
-    for i in range(6):
-        if resultStates[i]:
-            iface.addRasterLayer(filer.generateFileName(resultName[i], "TIF"), resultName[i])
+    filer.saveAll(results)
+
+    print("Outputs saved")
+
+    resultNames = ["TOA", "BT", "NDVI", "PV", "LSE", "LST"]
+    if(displayResults):
+        displayOnScreen(resultStates, resultNames, filer)
+
+    print("Finished")
