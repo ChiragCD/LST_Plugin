@@ -77,7 +77,7 @@ def processAll(filePaths, resultStates, satType):
 
     filer = fileio.fileHandler()
 
-    band = filer.loadBands(filePaths)
+    bands = filer.loadBands(filePaths)
 
     results = procedures.process(bands, satType, resultStates)
 
