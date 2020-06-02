@@ -113,10 +113,12 @@ class processor(object):
 
         data = {"ndvi_soil": 0.2, "ndvi_vegetation": 0.5}
 
+        scale = data["ndvi_vegetation"] - data["ndvi_soil"]
+        offset = data["ndvi_soil"] / scale
+
         self.report("Calculating PV")
-        self.pv = np.square(
-            (self.ndvi - data["ndvi_soil"]) / (data["ndvi_vegetation"] - data["ndvi_soil"])
-        )
+        self.pv = (self.ndvi * scale) - offset
+        self.pv **= 2
 
 
     def calc_LSE(self):

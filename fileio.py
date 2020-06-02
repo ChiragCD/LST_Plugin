@@ -1,5 +1,7 @@
 import numpy as np
 import gdal, os
+from zipfile import ZipFile
+import tarfile
 
 class fileHandler(object):
 
@@ -29,7 +31,57 @@ class fileHandler(object):
         return array
 
     def loadZip(self, filePaths):
-        return
+
+        filepath = filePaths["zip"]
+        recognised = False
+        bands = {"Error" : None}
+        for ext in [".tar.gz", ".tar", ".zip", ".gz"]:
+            if(filepath.endswith(ext)):
+                recognised = True
+        if(not(recognised)):
+            bands["Error"] = "Unknown compressed file format"
+            return bands
+        self.folder = filepath[:filepath.rfind("/")]
+
+        if(filepath.endswith(".zip")):
+            compressed = ZipFile(filepath, 'r')
+            extract = compressed.extract
+            listoffiles = compressed.namelist()
+        elif(filepath.endswith(".gz")):
+            compressed = tarfile.open(filepath, "r:gz")
+            extract = compressed.extract
+            listoffiles = [member.name for member in compressed.getmembers()]
+        else:
+            compressed = tarfile.open(filepath, 'r')
+            extract = compressed.extract
+            listoffiles = compressed.getmembers()
+
+        for filename in listoffiles:
+            if(filename.endswith("MTL.txt")):
+                if(filename[:4] == "LC08"):
+                    bands["sat_type"] = "Landsat8"
+                    sat_type = "Landsat8"
+                if(filename[:4] == "LT05"):
+                    bands["sat_type"] = "Landsat5"
+                    sat_type = "Landsat5"
+        if("sat_type" not in bands):
+            bands["Error"] = "Unknown satellite - Please verify that files have not been renamed"
+            compressed.close()
+            return bands
+
+        sat_bands = {"Landsat5" : {"Red" : "B3", "Near-IR" : "B4", "Thermal-IR" : "B6"},
+                "Landsat8" : {"Red" : "B4", "Near-IR" : "B5", "Thermal-IR" : "B10"} }
+        filepaths = dict()
+        for band in ("Red", "Near-IR", "Thermal-IR"):
+            bands[band] = np.array([])
+            for filename in listoffiles:
+                if(filename.endswith(sat_bands[sat_type][band] + ".TIF")):
+                    extract(filename)
+                    filepaths[band] = filename
+        compressed.close()
+        for band in ("Red", "Near-IR", "Thermal-IR"):
+                bands[band] = self.readBand(filepaths[band])
+        return bands
 
     def loadBands(self, filepaths):
 
@@ -42,8 +94,11 @@ class fileHandler(object):
             bands - dictionary of bandnames (str) to 2d numpy arrays (int16)
         """
 
-        bands = dict()
+        bands = {"Error" : None}
         for band in filepaths:
+            if(not(band.endswith(".TIF"))):
+                bands["Error"] = "Unknown band format"
+                return bands
             bands[band] = self.readBand(filepaths[band])
         return bands
 

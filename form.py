@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
 
         # input file option
         label = QLabel()
-        label.setText("Input bands")
+        label.setText("Input Bands")
         label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(label)
 
@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
         # select data type
         dtwidget = QWidget()
         hlayout = QHBoxLayout()
-        label = QLabel("Select Data type")
+        label = QLabel("Select Data Type")
         lst5button = QRadioButton("Landsat5")
         lst8button = QRadioButton("Landsat8")
         lst8button.setChecked(True)
@@ -56,9 +56,30 @@ class MainWindow(QMainWindow):
         dtwidget.setLayout(hlayout)
         self.layout.addWidget(dtwidget)
 
+        label = QLabel("OR")
+        label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(label)
+
+        # select a compressed file
+        zipLayout = QHBoxLayout()
+        pathField = QLineEdit()
+        pathField.setText("Compressed File")
+        zipLayout.addWidget(pathField)
+        selband = QPushButton()
+        selband.setText("Select Compressed File")
+        selband.clicked.connect(lambda: self.getFiles(pathField, "zip"))
+        zipLayout.addWidget(selband)
+        filesel = QWidget()
+        filesel.setLayout(zipLayout)
+        self.layout.addWidget(filesel)
+
+        h_line = QFrame()
+        h_line.setFrameShape(QFrame.HLine)
+        self.layout.addWidget(h_line)
+
         # select output types lable
         label = QLabel()
-        label.setText("Select Output types")
+        label.setText("Select Outputs")
         label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(label)
         # checkbox for various outputs
@@ -67,13 +88,21 @@ class MainWindow(QMainWindow):
         self.addCheckBox("NDVI")
         self.addCheckBox("Proportion of Vegetation")
         self.addCheckBox("Land Surface Emissivity")
-        self.addCheckBox("LST", defaultChecked=True)
+        self.addCheckBox("Land Surface Temperature", defaultChecked=True)
         # check through ischecked()
+
+        h_line = QFrame()
+        h_line.setFrameShape(QFrame.HLine)
+        self.layout.addWidget(h_line)
 
         # go button
         goButton = QPushButton("Go")
         goButton.clicked.connect(self.goFunc)
         self.layout.addWidget(goButton)
+
+        h_line = QFrame()
+        h_line.setFrameShape(QFrame.HLine)
+        self.layout.addWidget(h_line)
 
         mainWidget = QWidget()
         mainWidget.setLayout(self.layout)
@@ -102,9 +131,10 @@ class MainWindow(QMainWindow):
             )
         )
         hlayout.addWidget(selLayer)
+        hlayout.addWidget(QLabel("Or"))
 
         selband = QPushButton()
-        selband.setText("Select a file")
+        selband.setText("Select a File")
         selband.clicked.connect(lambda: self.getFiles(pathField, band))
         hlayout.addWidget(selband)
         filesel.setLayout(hlayout)
