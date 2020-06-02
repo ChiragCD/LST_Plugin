@@ -6,6 +6,7 @@ from . import mainLST
 
 
 class MainWindow(QMainWindow):
+
     def addCheckBox(self, text, defaultChecked=False):
 
         lstcheckbox = QCheckBox(text)
@@ -16,7 +17,6 @@ class MainWindow(QMainWindow):
     def __init__(self, iface):
 
         self.iface = iface
-        print(self.iface.mapCanvas().layers())
         super(MainWindow, self).__init__()
 
         self.filePaths = dict()
@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
 
         # print(self.layerInfor)
 
-        self.setWindowTitle("App")
+        self.setWindowTitle("LST Plugin")
 
         self.layout = QVBoxLayout()
 
@@ -78,6 +78,9 @@ class MainWindow(QMainWindow):
         mainWidget = QWidget()
         mainWidget.setLayout(self.layout)
         self.setCentralWidget(mainWidget)
+
+        self.status = QStatusBar()
+        self.setStatusBar(self.status)
 
     def browseFile(self, band):
         filesel = QWidget()
@@ -132,10 +135,13 @@ class MainWindow(QMainWindow):
             else self.radios[1].text()
         )
 
-        error = mainLST.processAll(self.filePaths, resultStates, satType)
-        if(error):
-            showError(error)
+        mainLST.processAll(self, self.filePaths, resultStates, satType)
 
-def showError(err):
-    messageBox = QMessageBox()
-    messageBox.critical(None, "", err)
+    def showStatus(self, text):
+
+        self.status.showMessage(text, 20000)
+
+    def showError(self, err):
+        self.showStatus(err)
+        messageBox = QMessageBox()
+        messageBox.critical(None, "", err)

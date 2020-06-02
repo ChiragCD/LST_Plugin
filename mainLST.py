@@ -68,9 +68,9 @@ def displayOnScreen(resultStates, resultNames, filer):
         if resultStates[i]:
             iface.addRasterLayer(filer.generateFileName(resultNames[i], "TIF"), resultNames[i])
 
-def processAll(filePaths, resultStates, satType, displayResults = True):
+def processAll(form, filePaths, resultStates, satType, displayResults = True):
 
-    print("Starting processing")
+    form.showStatus("Loading Files")
 
     filer = fileio.fileHandler()
     processor = procedures.processor()
@@ -80,22 +80,22 @@ def processAll(filePaths, resultStates, satType, displayResults = True):
     else:
         bands = filer.loadBands(filePaths)
 
-    print("Files loaded")
+    form.showStatus("Processing")
 
-    results = processor.process(bands, satType, resultStates)
+    results = processor.process(bands, satType, resultStates, form)
     if(results["Error"]):
         form.showError(results["Error"])
         return
     del results["Error"]
 
-    print("Results obtained")
+    form.showStatus("Saving Outputs")
 
     filer.saveAll(results)
 
-    print("Outputs saved")
+    form.showStatus("Displaying Outputs")
 
     resultNames = ["TOA", "BT", "NDVI", "PV", "LSE", "LST"]
     if(displayResults):
         displayOnScreen(resultStates, resultNames, filer)
 
-    print("Finished")
+    form.showStatus("Finished")

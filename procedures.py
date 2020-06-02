@@ -17,6 +17,8 @@ class processor(object):
         self.lse = np.array([])
         self.lst = np.array([])
 
+        self.form = None
+
     def calc_TOA(self):
 
         """
@@ -39,8 +41,8 @@ class processor(object):
             },  ##-0.19 = 0.1 - 0.29 (landsat 8 band 10 correction)
             "Landsat5": {"mul": 0.055375, "add": 1.18243},
         }
+        self.report("Calculating TOA")
         self.toa = (self.tir * data[self.sat_type]["mul"]) + data[self.sat_type]["add"]
-        print("Calculated TOA")
 
 
     def calc_BT(self):
@@ -64,8 +66,8 @@ class processor(object):
             "Landsat8": {"K1": 774.8853, "K2" :1321.0789},
             "Landsat5": {"K1": 607.76, "K2": 1260.56},
         }
+        self.report("Calculating BT")
         self.bt = (data[self.sat_type]["K2"] / np.log((data[self.sat_type]["K1"] / self.toa) + 1)) - 273.15
-        print("Calculated BT")
 
 
     def calc_NDVI(self):
@@ -88,8 +90,8 @@ class processor(object):
         if(not(self.r.size)):
             return "Red data missing"
 
+        self.report("Calculating NDVI")
         self.ndvi = (self.nir - self.r) / (self.nir + self.r)
-        print("Calculated NDVI")
 
 
     def calc_PV(self):
@@ -110,10 +112,11 @@ class processor(object):
             return error
 
         data = {"ndvi_soil": 0.2, "ndvi_vegetation": 0.5}
+
+        self.report("Calculating PV")
         self.pv = np.square(
             (self.ndvi - data["ndvi_soil"]) / (data["ndvi_vegetation"] - data["ndvi_soil"])
         )
-        print("Calculated PV")
 
 
     def calc_LSE(self):
@@ -145,8 +148,8 @@ class processor(object):
                 self.pv[np.logical_and(self.ndvi >= 0.2, self.ndvi < 0.5)] * \
                 (data["vegetation_emissivity"] - data["soil_emissivity"])
                 )
+        self.report("Calculating LSE")
         self.lse[self.ndvi >= 0.5] = data["vegetation_emissivity"]
-        print("Calculated LSE")
 
 
     def calc_LST(self):
@@ -169,8 +172,8 @@ class processor(object):
             return error
 
         data = {"lambda": 0.00115, "rho": 1.4388}  ##Verify values, only ratio important
+        self.report("Calculating LST")
         self.lst = self.bt / (1 + (data["lambda"] * self.bt / data["rho"]) * np.log(self.lse))
-        print("Calculated LST")
 
     @staticmethod
     def getBand(bandName, bands, mask):
@@ -181,7 +184,11 @@ class processor(object):
         else:
             return np.array([])
 
-    def process(self, bands, sat_type, required):
+    def report(self, text):
+
+        self.form.showStatus(text)
+
+    def process(self, bands, sat_type, required, form):
 
         """
         Interfacing function, follows steps and returns all subparts
@@ -194,6 +201,7 @@ class processor(object):
 
         error = None
         results = dict()
+        self.form = form
 
         if(not(list(bands.values()))):
             results["Error"] = "Files missing"
