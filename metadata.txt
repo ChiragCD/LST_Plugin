@@ -21,6 +21,7 @@ repository=https://github.com/ChiragCD/LST_Plugin
 ## Optional metadata :
 
 category=Raster
+icon=icon.png
 experimental=True
 tags=LST, NDVI, TOA Radiance
 ## plugin_dependencies=None

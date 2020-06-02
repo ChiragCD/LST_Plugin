@@ -6,7 +6,7 @@ from qgis.utils import iface
 import os
 
 # neccesary
-from . import form, procedures, fileio
+from . import resources, form, procedures, fileio
 
 ## Main class: LSTplugin
 
@@ -34,7 +34,7 @@ class LSTplugin(object):
         """
 
         self.action = QAction(
-            icon=QIcon(":/plugins/LST_Plugin/icon.png"),
+                icon=QIcon(":plugins/LST_Plugin/icon.png"),
             text="LST plugin",
             parent=self.iface.mainWindow(),
         )
