@@ -1,12 +1,8 @@
-## This function is called upon import (loading) by QGIS
-
-"""
-Inputs:
-    iface - qgis.gui.QgisInterface
-Returns:
-    unnamed - LSTplugin
-"""
 
 def classFactory(iface):
+    """
+    This function is called when QGIS is loading plugins.
+    Returns a "plugin object", as such.
+    """
     from .mainLST import LandSurfaceTemperature
     return LandSurfaceTemperature(iface)

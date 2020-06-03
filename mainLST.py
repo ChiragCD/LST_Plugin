@@ -19,10 +19,6 @@ class LandSurfaceTemperature(object):
 
         """
         Initialiser
-        Inputs:
-            iface - qgis.gui.QgisInterface
-        Outputs:
-            mainLST object (implicitly)
         """
 
         self.iface = iface
@@ -31,23 +27,24 @@ class LandSurfaceTemperature(object):
 
         """
         Called when loaded
+        Adds plugin option to menus
         """
 
         self.action = QAction(
-                icon=QIcon(":plugins/LandSurfaceTemperature/icon.png"),
+            icon=QIcon(":plugins/LandSurfaceTemperature/icon.png"),
             text="Land Surface Temperature",
             parent=self.iface.mainWindow(),
         )
         self.action.triggered.connect(self.run)
 
-        ## Add to interface
         self.iface.addToolBarIcon(self.action)
         self.iface.addPluginToMenu("Land Surface Temperature", self.action)
 
     def unload(self):
 
         """
-        Called when unloaded
+        Called when plugin is unloaded
+        Removes option from interface
         """
 
         self.iface.removePluginMenu("Land Surface Temperature", self.action)
@@ -57,6 +54,7 @@ class LandSurfaceTemperature(object):
 
         """
         Called when plugin asked to run
+        Starts a UI instance, defined in form.py
         """
 
         window = form.MainWindow(self.iface)
@@ -64,11 +62,19 @@ class LandSurfaceTemperature(object):
 
 def displayOnScreen(resultStates, resultNames, filer):
 
+    """
+    Display generated outputs as layers on the interface
+    """
+
     for i in range(6):
         if resultStates[i]:
             iface.addRasterLayer(filer.generateFileName(resultNames[i], "TIF"), resultNames[i])
 
 def processAll(form, filePaths, resultStates, satType, displayResults = True):
+
+    """
+    Main processing element, called every time Go is pressed
+    """
 
     form.showStatus("Loading Files")
 

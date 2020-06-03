@@ -2,7 +2,15 @@ import numpy as np
 
 class processor(object):
 
+    """
+    Called for numpy array manipulation
+    """
+
     def __init__(self):
+
+        """
+        Initializes all numpy arrays
+        """
 
         self.sat_type = None
 
@@ -23,10 +31,6 @@ class processor(object):
 
         """
         Calculates Top Of Atmosphere Radiance
-        Inputs:
-            tir - numpy array
-        Returns:
-            toa - numpy array
         """
 
         if(self.toa.size):
@@ -39,7 +43,7 @@ class processor(object):
                 "mul": 0.0003342,
                 "add": -0.19,
             },  ##-0.19 = 0.1 - 0.29 (landsat 8 band 10 correction)
-            "Landsat5": {"mul": 0.055375, "add": 1.18243},
+            "Landsat5": {"mul": 0.055375, "add": 1.18243}
         }
         self.report("Calculating TOA")
         self.toa = (self.tir * data[self.sat_type]["mul"]) + data[self.sat_type]["add"]
@@ -49,10 +53,6 @@ class processor(object):
 
         """
         Calculates at-sensor Brightness Temperature
-        Inputs:
-            toa - numpy array
-        Returns:
-            bt - numpy array
         """
 
         if(self.bt.size):
@@ -73,11 +73,7 @@ class processor(object):
     def calc_NDVI(self):
 
         """
-        Calculates NDVI values
-        Inputs:
-            nir, r - numpy arrays
-        Returns:
-            ndvi - numpy array
+        Calculates NDVI values (Normalized Difference Vegetation Index)
         """
 
         if(self.ndvi.size):
@@ -98,10 +94,6 @@ class processor(object):
 
         """
         Calculates proportion of vegetation
-        Inputs:
-            ndvi - numpy array
-        Returns:
-            pv - numpy array
         """
 
         if(self.pv.size):
@@ -118,6 +110,8 @@ class processor(object):
 
         self.report("Calculating PV")
         self.pv = (self.ndvi * scale) - offset
+        self.pv[self.ndvi < 0.2] = 0
+        self.pv[self.ndvi > 0.5] = 1
         self.pv **= 2
 
 
@@ -125,10 +119,6 @@ class processor(object):
 
         """
         Calculates Land Surface Emmissivity
-        Inputs:
-            ndvi, pv - numpy array
-        Returns:
-            lse - numpy array
         """
 
         if(self.lse.size):
@@ -142,7 +132,9 @@ class processor(object):
             "soil_emissivity": 0.996,
             "vegetation_emissivity": 0.973,
         }
+
         self.report("Calculating LSE")
+
         self.lse = np.full(self.ndvi.shape, np.nan)
         self.lse[self.ndvi < 0] = data["water_emissivity"]
         self.lse[np.logical_and(self.ndvi >= 0, self.ndvi < 0.2)] = data["soil_emissivity"]
@@ -158,10 +150,6 @@ class processor(object):
 
         """
         Calculates Land Surface Temperature
-        Inputs:
-            bt, lse - numpy array
-        Returns:
-            lst - numpy array
         """
 
         if(self.lst.size):
@@ -179,6 +167,12 @@ class processor(object):
 
     @staticmethod
     def getBand(bandName, bands, mask):
+
+        """
+        Gets individual bands for dict of bands
+        Masks '0' values with numpy nan
+        """
+
         if(bandName in bands):
             band = bands[bandName]
             band[np.logical_not(mask)] = np.nan
@@ -188,17 +182,24 @@ class processor(object):
 
     def report(self, text):
 
+        """
+        Asks the UI to show a message on the status bar
+        """
+
         self.form.showStatus(text)
 
     def process(self, bands, sat_type, required, form):
 
         """
-        Interfacing function, follows steps and returns all subparts
+        Only this function should be accessed from outside this file
         Inputs:
-            r, nir, tir - numpy arrays
-            sat_type - str (either "Landsat8" or "Landsat5")
+            bands - dict of numpy arrays, "Red", "Near-IR", "Thermal-IR" are the relevant keys
+            sat_type - either "Landsat8" or "Landsat5"
+            required - boolean array of size 6, constitutes a request for some or all of
+                        [toa, bt, ndvi, pv, lse, lst] in order.
+            form - user interfacing element
         Returns:
-            toa, bt, ndvi, pv, lse, lst - numpy arrays
+            A dict of numpy arrays, with a key "Error" holding error message, if any
         """
 
         error = None

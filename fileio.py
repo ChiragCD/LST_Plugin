@@ -5,10 +5,16 @@ import tarfile
 
 class fileHandler(object):
 
+    """
+    Class to handle all file input output operations
+    """
+
     def __init__(self):
 
-        self.folder = ""
-        self.outfolder = ""
+        self.folder = ""            ## Folder in which all operations are ongoing
+        self.outfolder = ""         ## Folder in which to place outputs
+
+        ## Tif writing data, copied from input
         self.rows = 0
         self.cols = 0
         self.driver = None
@@ -16,6 +22,11 @@ class fileHandler(object):
         self.projection = None
 
     def readBand(self, filepath):
+
+        """
+        Given a filepath, read a numpy array from its data
+        Save tif data for future use, if the class has not already done so
+        """
 
         im = gdal.Open(filepath)
         array = im.ReadAsArray().astype(np.float32)
@@ -31,6 +42,12 @@ class fileHandler(object):
         return array
 
     def loadZip(self, filePaths):
+
+        """
+        Compatible with zip, tar and gz extensions
+        Read only Red, Near IR and Thermal IR bands
+        Get satellite type by looking at the name of the metadata file.
+        """
 
         filepath = filePaths["zip"]
         recognised = False
@@ -86,12 +103,7 @@ class fileHandler(object):
     def loadBands(self, filepaths):
 
         """
-        Gets band data as numpy arrays, from filepaths
-
-        Inputs:
-            filepaths - dictionary of bandnames (str) to paths (str)
-        Outputs:
-            bands - dictionary of bandnames (str) to 2d numpy arrays (int16)
+        Gets band data as numpy arrays, from a dict of filepaths
         """
 
         bands = {"Error" : None}
@@ -105,13 +117,9 @@ class fileHandler(object):
     def saveArray(self, array, fname):
 
         """
-        Saves array as tiff file fname
-
-        Inputs:
-            array - numpy array
-            fname - str
-        Outputs:
-            None
+        Saves array as tiff file named fname
+        Use TIF info saved by the class on input
+        Should not be used directly, use saveAll instead
         """
 
         outDS = self.driver.Create(fname, self.cols, self.rows, bands=1, eType = gdal.GDT_Float32)
@@ -132,6 +140,10 @@ class fileHandler(object):
 
     def prepareOutFolder(self):
 
+        """
+        Make a new directory under the operating folder, for outputs
+        """
+
         outfolder = self.folder + "/LandSurfaceTemperature"
         while os.path.isdir(outfolder):
             if outfolder[-1].isnumeric():
@@ -142,9 +154,18 @@ class fileHandler(object):
         self.outfolder = outfolder
 
     def generateFileName(self, topic, ftype):
+
+        """
+        Generate a filepath for topic
+        """
+
         return self.outfolder + "/" + topic + "." + ftype
 
     def saveAll(self, arrays):
+
+        """
+        Write each of a dict of arrays as TIF outputs
+        """
 
         if(not(self.outfolder)):
             self.prepareOutFolder()
