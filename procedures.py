@@ -142,6 +142,7 @@ class processor(object):
             "soil_emissivity": 0.996,
             "vegetation_emissivity": 0.973,
         }
+        self.report("Calculating LSE")
         self.lse = np.full(self.ndvi.shape, np.nan)
         self.lse[self.ndvi < 0] = data["water_emissivity"]
         self.lse[np.logical_and(self.ndvi >= 0, self.ndvi < 0.2)] = data["soil_emissivity"]
@@ -150,7 +151,6 @@ class processor(object):
                 self.pv[np.logical_and(self.ndvi >= 0.2, self.ndvi < 0.5)] * \
                 (data["vegetation_emissivity"] - data["soil_emissivity"])
                 )
-        self.report("Calculating LSE")
         self.lse[self.ndvi >= 0.5] = data["vegetation_emissivity"]
 
 
