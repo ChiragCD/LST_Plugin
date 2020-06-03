@@ -18,7 +18,7 @@ class fileHandler(object):
     def readBand(self, filepath):
 
         im = gdal.Open(filepath)
-        array = im.ReadAsArray().astype(np.float16)
+        array = im.ReadAsArray().astype(np.float32)
         if(not(self.folder)):
             self.folder = filepath[:filepath.rfind('/')]
         if(not(self.driver)):
