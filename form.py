@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
 
         # print(self.layerInfor)
 
-        self.setWindowTitle("LST Plugin")
+        self.setWindowTitle("LandSurfaceTemperature")
 
         self.layout = QVBoxLayout()
 

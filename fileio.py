@@ -132,7 +132,7 @@ class fileHandler(object):
 
     def prepareOutFolder(self):
 
-        outfolder = self.folder + "/LSTPluginResults"
+        outfolder = self.folder + "/LandSurfaceTemperature"
         while os.path.isdir(outfolder):
             if outfolder[-1].isnumeric():
                 outfolder = outfolder[:-1] + str(1 + int(outfolder[-1]))

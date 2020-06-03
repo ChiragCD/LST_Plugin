@@ -11,7 +11,7 @@ from . import resources, form, procedures, fileio
 ## Main class: LSTplugin
 
 
-class LSTplugin(object):
+class LandSurfaceTemperature(object):
 
     """Main plugin object"""
 
@@ -34,15 +34,15 @@ class LSTplugin(object):
         """
 
         self.action = QAction(
-                icon=QIcon(":plugins/LST_Plugin/icon.png"),
-            text="LST plugin",
+                icon=QIcon(":plugins/LandSurfaceTemperature/icon.png"),
+            text="Land Surface Temperature",
             parent=self.iface.mainWindow(),
         )
         self.action.triggered.connect(self.run)
 
         ## Add to interface
         self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu("LST plugin", self.action)
+        self.iface.addPluginToMenu("Land Surface Temperature", self.action)
 
     def unload(self):
 
@@ -50,7 +50,7 @@ class LSTplugin(object):
         Called when unloaded
         """
 
-        self.iface.removePluginMenu("LST plugin", self.action)
+        self.iface.removePluginMenu("Land Surface Temperature", self.action)
         self.iface.removeToolBarIcon(self.action)
 
     def run(self):

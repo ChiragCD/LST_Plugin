@@ -8,5 +8,5 @@ Returns:
 """
 
 def classFactory(iface):
-    from .mainLST import LSTplugin
-    return LSTplugin(iface)
+    from .mainLST import LandSurfaceTemperature
+    return LandSurfaceTemperature(iface)

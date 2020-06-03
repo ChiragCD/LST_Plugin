@@ -4,7 +4,7 @@
 
 ## Mandatory plugin details :
 
-name=LST
+name=LandSurfaceTemperature
 qgisMinimumVersion=3.0
 description=LST estimation from landsat 5 and 8 data.
 about=This plugin calculates LST values from input Landsat 5 or 8 data.
