@@ -2,6 +2,7 @@ from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
 
+import time
 from . import mainLST, benchmarker
 
 
@@ -82,6 +83,18 @@ class MainWindow(QMainWindow):
         filesel = QWidget()
         filesel.setLayout(zipLayout)
         self.layout.addWidget(filesel)
+
+        h_line = QFrame()
+        h_line.setFrameShape(QFrame.HLine)
+        self.layout.addWidget(h_line)
+
+        # select shapefile, optional
+
+        label = QLabel("Optional - Limit calculations to shapefile")
+        label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(label)
+
+        self.layout.addWidget(self.browseFile("Shape"))
 
         h_line = QFrame()
         h_line.setFrameShape(QFrame.HLine)
@@ -206,7 +219,10 @@ class MainWindow(QMainWindow):
             else self.radios[1].text()
         )
 
+        start_time = time.time()
         mainLST.processAll(self, self.filePaths, resultStates, satType)
+        end_time = time.time()
+        self.showStatus("Finished, process time - " + str(int(end_time - start_time)) + " seconds")
 
     def showStatus(self, text):
 
