@@ -109,6 +109,13 @@ class MainWindow(QMainWindow):
         goButton.clicked.connect(self.goFunc)
         self.layout.addWidget(goButton)
 
+
+        # run benchmark button
+        bmbutton = QPushButton("Run BenchMark")
+        bmbutton.clicked.connect(lambda: self.runBenchmark())
+        self.layout.addWIdget(bmbutton)
+
+
         h_line = QFrame()
         h_line.setFrameShape(QFrame.HLine)
         self.layout.addWidget(h_line)
@@ -214,3 +221,6 @@ class MainWindow(QMainWindow):
         self.showStatus(err)
         messageBox = QMessageBox()
         messageBox.critical(None, "", err)
+
+    def runBenchmark(self):
+        pass
