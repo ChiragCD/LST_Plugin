@@ -2,7 +2,7 @@ from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
 
-from . import mainLST
+from . import mainLST, benchmarker
 
 
 class MainWindow(QMainWindow):
@@ -227,4 +227,5 @@ class MainWindow(QMainWindow):
         messageBox.critical(None, "", err)
 
     def runBenchmark(self):
-        pass
+        
+        benchmarker.benchmark(self)
