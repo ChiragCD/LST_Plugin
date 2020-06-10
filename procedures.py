@@ -216,7 +216,7 @@ class processor(object):
         tempshape = list(bands.values())[0].shape
         mask = np.full(tempshape, True)
         if(shape.size):
-            print(shape[0][0])
+            mask[shape == 1] = False
         for layer in list(bands.values()):
             mask[layer == 0] = False
 
