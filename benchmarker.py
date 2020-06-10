@@ -5,15 +5,15 @@ class benchmark(object):
 
     def __init__(self, form):
 
-        np.random.seed(0)
 
         start_time = time.time()
 
-        arr = np.random.rand(100, 100)
-        print(arr)
-        arr_copy = np.copy(arr)
-        arr_copy = arr**2
-        arr**=2
+        for i in range(10):
+            np.random.seed(i)
+            arr = np.random.rand(1000, 1000)
+            arr_copy = np.copy(arr)
+            arr_copy = arr**2
+            arr**=2
 
         end_time = time.time()
 
