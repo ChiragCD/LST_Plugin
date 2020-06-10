@@ -4,6 +4,8 @@ from zipfile import ZipFile
 import processing
 from qgis.core import QgsVectorLayer
 
+gdal.UseExceptions()
+
 class fileHandler(object):
 
     """
@@ -166,34 +168,34 @@ class fileHandler(object):
         # layer = layerds.GetLayer()
         return layer
     
-    def rasterize(self, vlayer, fname):
+    def rasterize(self, vlayer, fname, res = 25):
 
         rfile = self.driver.Create(fname, self.cols, self.rows, bands=1, eType = gdal.GDT_Float32)
         rfile.SetProjection(self.projection)
         rfile.SetGeoTransform(self.geoTransform)
+        rfile = None
 
         extent = vlayer.extent()
         xmin = extent.xMinimum()
         xmax = extent.xMaximum()
         ymin = extent.yMinimum()
         ymax = extent.yMaximum()
+        print(xmin, xmax, ymin, ymax)
 
         parameters = {
             "INPUT" : vlayer,
-            # "FIELD" : "id",
-            "OPTIONS" : ["id"],
-            "BURN"  : 1.0,
+            "FIELD" : "id",
+            "HEIGHT": res,
+            "WIDTH" : res,
+            "BURN"  : 0,
             "UNITS" : 1,
-            "HEIGHT": self.rows,
-            "WIDTH" : self.cols,
             "EXTENT":"%f,%f,%f,%f"% (xmin, xmax, ymin, ymax),
-            "NODATA":-1.0,
             "DATA_TYPE" : 5,
-            "INIT" : -2.0,
+            "NODATA" : 1,
             "OUTPUT": fname
         }
         processing.run("gdal:rasterize", parameters)
-        # gdal.RasterizeLayer(rfile, [1], vlayer, options = ["id"], burn_values = [255])   
+        # gdal.RasterizeLayer(rfile, [1], vlayer, options = ["id"], burn_values = [1])   
 
     def prepareOutFolder(self):
 
