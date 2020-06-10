@@ -2,7 +2,7 @@ import numpy as np
 import gdal, os, tarfile, ogr
 from zipfile import ZipFile
 import processing
-from qgis.core import QgsVectorLayer
+from qgis.core import QgsVectorLayer, QgsRasterLayer, QgsCoordinateTransform, QgsProject
 
 gdal.UseExceptions()
 
@@ -41,6 +41,9 @@ class fileHandler(object):
             self.driver = im.GetDriver()
             self.geoTransform = im.GetGeoTransform()
             self.projection = im.GetProjection()
+            layer = QgsRasterLayer(filepath, "Temp")
+            self.extent = layer.extent()
+            self.crs = layer.crs()
         del im
         return array
 
@@ -168,25 +171,27 @@ class fileHandler(object):
         # layer = layerds.GetLayer()
         return layer
     
-    def rasterize(self, vlayer, fname, res = 25):
+    def rasterize(self, vlayer, fname, res = 30):
 
         rfile = self.driver.Create(fname, self.cols, self.rows, bands=1, eType = gdal.GDT_Float32)
         rfile.SetProjection(self.projection)
         rfile.SetGeoTransform(self.geoTransform)
         rfile = None
 
-        extent = vlayer.extent()
+        transformer = QgsCoordinateTransform(self.crs, vlayer.crs(), QgsProject.instance())
+        extent = transformer.transformBoundingBox(self.extent)
         xmin = extent.xMinimum()
         xmax = extent.xMaximum()
         ymin = extent.yMinimum()
         ymax = extent.yMaximum()
-        print(xmin, xmax, ymin, ymax)
+
+        resdrop = (self.extent.xMaximum() - self.extent.xMinimum()) / (xmax - xmin)
 
         parameters = {
             "INPUT" : vlayer,
             "FIELD" : "id",
-            "HEIGHT": res,
-            "WIDTH" : res,
+            "HEIGHT": res / resdrop,
+            "WIDTH" : res / resdrop,
             "BURN"  : 0,
             "UNITS" : 1,
             "EXTENT":"%f,%f,%f,%f"% (xmin, xmax, ymin, ymax),

@@ -205,17 +205,20 @@ class processor(object):
         error = None
         results = dict()
         self.form = form
+        shape = np.array([])
 
         if(not(list(bands.values()))):
             results["Error"] = "Files missing"
             return results
-        temp = list(bands.values())[0]
-        mask = np.full(temp.shape, True)
-        del temp
+        if("Shape" in bands):
+            shape = bands["Shape"]
+            del bands["Shape"]
+        tempshape = list(bands.values())[0].shape
+        mask = np.full(tempshape, True)
+        if(shape.size):
+            print(shape[0][0])
         for layer in list(bands.values()):
             mask[layer == 0] = False
-        if("Shape" in layer):
-            pass
 
         self.sat_type = sat_type
         self.r = processor.getBand("Red", bands, mask)
