@@ -17,4 +17,4 @@ class benchmark(object):
 
         end_time = time.time()
 
-        form.showError(start_time - end_time)
+        form.showError("Benchmarking time " + str(end_time - start_time))
