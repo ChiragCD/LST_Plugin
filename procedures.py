@@ -214,6 +214,8 @@ class processor(object):
         del temp
         for layer in list(bands.values()):
             mask[layer == 0] = False
+        if("Shape" in layer):
+            pass
 
         self.sat_type = sat_type
         self.r = processor.getBand("Red", bands, mask)

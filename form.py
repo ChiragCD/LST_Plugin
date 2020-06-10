@@ -187,6 +187,11 @@ class MainWindow(QMainWindow):
 
         if(addr == "Select a layer"):
             return
+        if(not(addr.lower().endswith(".tif")) and not(addr.lower().endswith(".shp"))):
+            lastmatch = addr.lower().rfind(".tif")
+            if(lastmatch == -1):
+                lastmatch = addr.lower().rfind(".shp")
+            addr = addr[:lastmatch + 4]
         pathField.setText(addr)
         self.filePaths[band] = addr
 

@@ -1,7 +1,8 @@
 import numpy as np
-import gdal, os
+import gdal, os, tarfile, ogr
 from zipfile import ZipFile
-import tarfile
+import processing
+from qgis.core import QgsVectorLayer
 
 class fileHandler(object):
 
@@ -53,18 +54,18 @@ class fileHandler(object):
         recognised = False
         bands = {"Error" : None}
         for ext in [".tar.gz", ".tar", ".zip", ".gz"]:
-            if(filepath.endswith(ext)):
+            if(filepath.lower().endswith(ext)):
                 recognised = True
         if(not(recognised)):
             bands["Error"] = "Unknown compressed file format"
             return bands
         self.folder = filepath[:filepath.rfind("/")]
 
-        if(filepath.endswith(".zip")):
+        if(filepath.lower().endswith(".zip")):
             compressed = ZipFile(filepath, 'r')
             extract = compressed.extract
             listoffiles = compressed.namelist()
-        elif(filepath.endswith(".gz")):
+        elif(filepath.lower().endswith(".gz")):
             compressed = tarfile.open(filepath, "r:gz")
             extract = compressed.extract
             listoffiles = [member.name for member in compressed.getmembers()]
@@ -74,7 +75,7 @@ class fileHandler(object):
             listoffiles = compressed.getmembers()
 
         for filename in listoffiles:
-            if(filename.endswith("MTL.txt")):
+            if(filename.upper().endswith("MTL.TXT")):
                 if(filename[:4] == "LC08"):
                     bands["sat_type"] = "Landsat8"
                     sat_type = "Landsat8"
@@ -92,12 +93,17 @@ class fileHandler(object):
         for band in ("Red", "Near-IR", "Thermal-IR"):
             bands[band] = np.array([])
             for filename in listoffiles:
-                if(filename.endswith(sat_bands[sat_type][band] + ".TIF")):
+                if(filename.upper().endswith(sat_bands[sat_type][band] + ".TIF")):
                     extract(filename)
                     filepaths[band] = filename
         compressed.close()
         for band in ("Red", "Near-IR", "Thermal-IR"):
-                bands[band] = self.readBand(filepaths[band])
+            bands[band] = self.readBand(filepaths[band])
+        if("Shape" in filepaths):
+            bands["Shape"] = self.readShapeFile(filepaths["Shape"])
+            if(type(bands["Shape"]) == str):
+                bands["Error"] = bands["Shape"]
+                return bands
         return bands
 
     def loadBands(self, filepaths):
@@ -108,11 +114,26 @@ class fileHandler(object):
 
         bands = {"Error" : None}
         for band in filepaths:
-            if(not(filepaths[band].endswith(".TIF"))):
-                bands["Error"] = "Unknown band format"
+            if(band == "Shape"):
+                continue
+            if(not(filepaths[band].lower().endswith(".tif"))):
+                bands["Error"] = "Bands must be TIFs"
                 return bands
             bands[band] = self.readBand(filepaths[band])
+        if("Shape" in filepaths):
+            bands["Shape"] = self.readShapeFile(filepaths["Shape"])
+            if(type(bands["Shape"]) == str):
+                bands["Error"] = bands["Shape"]
+                return bands
         return bands
+    
+    def readShapeFile(self, vectorfname):
+        if(not(vectorfname.lower().endswith(".shp"))):
+            return "Shapes must be SHPs"
+        vlayer = self.loadVectorLayer(vectorfname)
+        shapefile = self.generateFileName("Shape", "TIF")
+        self.rasterize(vlayer, shapefile)
+        return self.readBand(shapefile)
 
     def saveArray(self, array, fname):
 
@@ -137,6 +158,42 @@ class fileHandler(object):
         https://gis.stackexchange.com/questions/37238/writing-numpy-array-to-raster-file
         was incredibly useful.
         """
+    
+    def loadVectorLayer(self, fname):
+
+        layer = QgsVectorLayer(fname, "Shape", "ogr")
+        # layerds = ogr.Open(fname)
+        # layer = layerds.GetLayer()
+        return layer
+    
+    def rasterize(self, vlayer, fname):
+
+        rfile = self.driver.Create(fname, self.cols, self.rows, bands=1, eType = gdal.GDT_Float32)
+        rfile.SetProjection(self.projection)
+        rfile.SetGeoTransform(self.geoTransform)
+
+        extent = vlayer.extent()
+        xmin = extent.xMinimum()
+        xmax = extent.xMaximum()
+        ymin = extent.yMinimum()
+        ymax = extent.yMaximum()
+
+        parameters = {
+            "INPUT" : vlayer,
+            # "FIELD" : "id",
+            "OPTIONS" : ["id"],
+            "BURN"  : 1.0,
+            "UNITS" : 1,
+            "HEIGHT": self.rows,
+            "WIDTH" : self.cols,
+            "EXTENT":"%f,%f,%f,%f"% (xmin, xmax, ymin, ymax),
+            "NODATA":-1.0,
+            "DATA_TYPE" : 5,
+            "INIT" : -2.0,
+            "OUTPUT": fname
+        }
+        processing.run("gdal:rasterize", parameters)
+        # gdal.RasterizeLayer(rfile, [1], vlayer, options = ["id"], burn_values = [255])   
 
     def prepareOutFolder(self):
 
@@ -158,7 +215,9 @@ class fileHandler(object):
         """
         Generate a filepath for topic
         """
-
+        
+        if(not(self.outfolder)):
+            self.prepareOutFolder()
         return self.outfolder + "/" + topic + "." + ftype
 
     def saveAll(self, arrays):
