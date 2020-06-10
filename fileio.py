@@ -1,5 +1,5 @@
 import numpy as np
-import gdal, os, tarfile, ogr
+import gdal, os, tarfile
 from zipfile import ZipFile
 import processing
 from qgis.core import QgsVectorLayer, QgsRasterLayer, QgsCoordinateTransform, QgsProject
@@ -104,6 +104,7 @@ class fileHandler(object):
         compressed.close()
         for band in ("Red", "Near-IR", "Thermal-IR"):
             bands[band] = self.readBand(filepaths[band])
+
         if("Shape" in filepaths):
             bands["Shape"] = self.readShapeFile(filepaths["Shape"])
             if(type(bands["Shape"]) == str):
@@ -133,6 +134,11 @@ class fileHandler(object):
         return bands
     
     def readShapeFile(self, vectorfname):
+
+        """
+        Get a rasterized numpy array from the features of a shapefile
+        """
+        
         if(not(vectorfname.lower().endswith(".shp"))):
             return "Shapes must be SHPs"
         vlayer = self.loadVectorLayer(vectorfname)
@@ -166,12 +172,18 @@ class fileHandler(object):
     
     def loadVectorLayer(self, fname):
 
+        """
+        Load a vector layer, using qgis core functionality
+        """
+
         layer = QgsVectorLayer(fname, "Shape", "ogr")
-        # layerds = ogr.Open(fname)
-        # layer = layerds.GetLayer()
         return layer
     
     def rasterize(self, vlayer, fname, res = 30):
+
+        """
+        Convert a vector layer to a raster layer, handle CRS differences
+        """
 
         rfile = self.driver.Create(fname, self.cols, self.rows, bands=1, eType = gdal.GDT_Float32)
         rfile.SetProjection(self.projection)
@@ -199,8 +211,7 @@ class fileHandler(object):
             "NODATA" : 1,
             "OUTPUT": fname
         }
-        processing.run("gdal:rasterize", parameters)
-        # gdal.RasterizeLayer(rfile, [1], vlayer, options = ["id"], burn_values = [1])   
+        processing.run("gdal:rasterize", parameters) 
 
     def prepareOutFolder(self):
 
