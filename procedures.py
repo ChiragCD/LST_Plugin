@@ -45,7 +45,7 @@ class processor(object):
             },  ##-0.19 = 0.1 - 0.29 (landsat 8 band 10 correction)
             "Landsat5": {"mul": 0.055375, "add": 1.18243}
         }
-        self.report("Calculating TOA")
+        self.report("Calculating TOA            0%")
         self.toa = (self.tir * data[self.sat_type]["mul"]) + data[self.sat_type]["add"]
 
 
@@ -66,7 +66,7 @@ class processor(object):
             "Landsat8": {"K1": 774.8853, "K2" :1321.0789},
             "Landsat5": {"K1": 607.76, "K2": 1260.56},
         }
-        self.report("Calculating BT")
+        self.report("Calculating BT             10%")
         self.bt = (data[self.sat_type]["K2"] / np.log((data[self.sat_type]["K1"] / self.toa) + 1)) - 273.15
 
 
@@ -86,7 +86,7 @@ class processor(object):
         if(not(self.r.size)):
             return "Red data missing"
 
-        self.report("Calculating NDVI")
+        self.report("Calculating NDVI           20%")
         self.ndvi = (self.nir - self.r) / (self.nir + self.r)
 
 
@@ -108,10 +108,12 @@ class processor(object):
         scale = data["ndvi_vegetation"] - data["ndvi_soil"]
         offset = data["ndvi_soil"] / scale
 
-        self.report("Calculating PV")
+        self.report("Calculating PV             30%")
         self.pv = (self.ndvi * scale) - offset
+        self.report("Calculating PV             40%")
         self.pv[self.ndvi < 0.2] = 0
         self.pv[self.ndvi > 0.5] = 1
+        self.report("Calculating PV             50%")
         self.pv **= 2
 
 
@@ -133,16 +135,18 @@ class processor(object):
             "vegetation_emissivity": 0.973,
         }
 
-        self.report("Calculating LSE")
+        self.report("Calculating LSE            60%")
 
         self.lse = np.full(self.ndvi.shape, np.nan)
         self.lse[self.ndvi < 0] = data["water_emissivity"]
         self.lse[np.logical_and(self.ndvi >= 0, self.ndvi < 0.2)] = data["soil_emissivity"]
+        self.report("Calculating LSE            70%")
         self.lse[np.logical_and(self.ndvi >= 0.2, self.ndvi < 0.5)] = (
                 data["soil_emissivity"] + \
                 self.pv[np.logical_and(self.ndvi >= 0.2, self.ndvi < 0.5)] * \
                 (data["vegetation_emissivity"] - data["soil_emissivity"])
                 )
+        self.report("Calculating LSE            80%")
         self.lse[self.ndvi >= 0.5] = data["vegetation_emissivity"]
 
 
@@ -162,7 +166,7 @@ class processor(object):
             return error
 
         data = {"lambda": 0.00115, "rho": 1.4388}  ##Verify values, only ratio important
-        self.report("Calculating LST")
+        self.report("Calculating LST            90%")
         self.lst = self.bt / (1 + (data["lambda"] * self.bt / data["rho"]) * np.log(self.lse))
 
     @staticmethod

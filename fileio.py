@@ -94,19 +94,24 @@ class fileHandler(object):
 
         sat_bands = {"Landsat5" : {"Red" : "B3", "Near-IR" : "B4", "Thermal-IR" : "B6"},
                 "Landsat8" : {"Red" : "B4", "Near-IR" : "B5", "Thermal-IR" : "B10"} }
-        filepaths = dict()
+
+        shapefile = None
+        if("Shape" in filePaths):
+            shapefile = filePaths["Shape"]
+
+        filePaths = dict()
         for band in ("Red", "Near-IR", "Thermal-IR"):
             bands[band] = np.array([])
             for filename in listoffiles:
                 if(filename.upper().endswith(sat_bands[sat_type][band] + ".TIF")):
                     extract(filename)
-                    filepaths[band] = filename
+                    filePaths[band] = filename
         compressed.close()
         for band in ("Red", "Near-IR", "Thermal-IR"):
-            bands[band] = self.readBand(filepaths[band])
+            bands[band] = self.readBand(filePaths[band])
 
-        if("Shape" in filepaths):
-            bands["Shape"] = self.readShapeFile(filepaths["Shape"])
+        if(shapefile):
+            bands["Shape"] = self.readShapeFile(shapefile)
             if(type(bands["Shape"]) == str):
                 bands["Error"] = bands["Shape"]
                 return bands
@@ -197,13 +202,13 @@ class fileHandler(object):
         ymin = extent.yMinimum()
         ymax = extent.yMaximum()
 
-        resdrop = (self.extent.xMaximum() - self.extent.xMinimum()) / (xmax - xmin)
+        res_scale = (xmax - xmin) / (self.extent.xMaximum() - self.extent.xMinimum())
 
         parameters = {
             "INPUT" : vlayer,
             "FIELD" : "id",
-            "HEIGHT": res / resdrop,
-            "WIDTH" : res / resdrop,
+            "HEIGHT": res * res_scale,
+            "WIDTH" : res * res_scale,
             "BURN"  : 0,
             "UNITS" : 1,
             "EXTENT":"%f,%f,%f,%f"% (xmin, xmax, ymin, ymax),

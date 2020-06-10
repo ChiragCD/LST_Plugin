@@ -235,7 +235,7 @@ class MainWindow(QMainWindow):
         Show a message on the status bar
         """
 
-        self.status.showMessage(text, 20000)
+        self.status.showMessage(text, 60000)
 
     def showError(self, err):
 

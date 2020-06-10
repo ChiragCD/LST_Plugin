@@ -76,12 +76,13 @@ def processAll(form, filePaths, resultStates, satType, displayResults = True):
     Main processing element, called every time Go is pressed
     """
 
-    form.showStatus("Loading Files")
-
     filer = fileio.fileHandler()
     processor = procedures.processor()
 
+    form.showStatus("Loading Files")
+
     if("zip" in filePaths):
+        form.showStatus("Extracting Files")
         bands = filer.loadZip(filePaths)
         satType = bands["sat_type"]
         del bands["sat_type"]
