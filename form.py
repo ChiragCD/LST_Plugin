@@ -110,10 +110,14 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(goButton)
 
 
+        h_line = QFrame()
+        h_line.setFrameShape(QFrame.HLine)
+        self.layout.addWidget(h_line)
+
         # run benchmark button
         bmbutton = QPushButton("Run BenchMark")
         bmbutton.clicked.connect(lambda: self.runBenchmark())
-        self.layout.addWIdget(bmbutton)
+        self.layout.addWidget(bmbutton)
 
 
         h_line = QFrame()
