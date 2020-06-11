@@ -195,20 +195,20 @@ class fileHandler(object):
         rfile.SetGeoTransform(self.geoTransform)
         rfile = None
 
-        transformer = QgsCoordinateTransform(self.crs, vlayer.crs(), QgsProject.instance())
-        extent = transformer.transformBoundingBox(self.extent)
-        xmin = extent.xMinimum()
-        xmax = extent.xMaximum()
-        ymin = extent.yMinimum()
-        ymax = extent.yMaximum()
+        if(self.crs != vlayer.crs()):
+            parameters = {"INPUT" : vlayer, "TARGET_CRS" : self.crs, "OUTPUT" : "TEMPORARY_OUTPUT"}
+            vlayer = processing.run("native:reprojectlayer", parameters)["OUTPUT"]
 
-        res_scale = (xmax - xmin) / (self.extent.xMaximum() - self.extent.xMinimum())
+        xmin = self.extent.xMinimum()
+        xmax = self.extent.xMaximum()
+        ymin = self.extent.yMinimum()
+        ymax = self.extent.yMaximum()
 
         parameters = {
             "INPUT" : vlayer,
             "FIELD" : "id",
-            "HEIGHT": res * res_scale,
-            "WIDTH" : res * res_scale,
+            "HEIGHT": res,
+            "WIDTH" : res,
             "BURN"  : 0,
             "UNITS" : 1,
             "EXTENT":"%f,%f,%f,%f"% (xmin, xmax, ymin, ymax),
@@ -216,7 +216,8 @@ class fileHandler(object):
             "NODATA" : 1,
             "OUTPUT": fname
         }
-        processing.run("gdal:rasterize", parameters) 
+        processing.run("gdal:rasterize", parameters)
+        vlayer = None
 
     def prepareOutFolder(self):
 
