@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class processor(object):
 
     """
@@ -33,9 +34,9 @@ class processor(object):
         Calculates Top Of Atmosphere Radiance
         """
 
-        if(self.toa.size):
+        if self.toa.size:
             return
-        if(not(self.tir.size)):
+        if not (self.tir.size):
             return "Thermal-IR data missing"
 
         data = {
@@ -43,11 +44,10 @@ class processor(object):
                 "mul": 0.0003342,
                 "add": -0.19,
             },  ##-0.19 = 0.1 - 0.29 (landsat 8 band 10 correction)
-            "Landsat5": {"mul": 0.055375, "add": 1.18243}
+            "Landsat5": {"mul": 0.055375, "add": 1.18243},
         }
         self.report("Calculating TOA            0%")
         self.toa = (self.tir * data[self.sat_type]["mul"]) + data[self.sat_type]["add"]
-
 
     def calc_BT(self):
 
@@ -55,20 +55,22 @@ class processor(object):
         Calculates at-sensor Brightness Temperature
         """
 
-        if(self.bt.size):
+        if self.bt.size:
             return
 
         error = self.calc_TOA()
-        if(error):
+        if error:
             return error
 
         data = {
-            "Landsat8": {"K1": 774.8853, "K2" :1321.0789},
+            "Landsat8": {"K1": 774.8853, "K2": 1321.0789},
             "Landsat5": {"K1": 607.76, "K2": 1260.56},
         }
         self.report("Calculating BT             10%")
-        self.bt = (data[self.sat_type]["K2"] / np.log((data[self.sat_type]["K1"] / self.toa) + 1)) - 273.15
-
+        self.bt = (
+            data[self.sat_type]["K2"]
+            / np.log((data[self.sat_type]["K1"] / self.toa) + 1)
+        ) - 273.15
 
     def calc_NDVI(self):
 
@@ -76,19 +78,18 @@ class processor(object):
         Calculates NDVI values (Normalized Difference Vegetation Index)
         """
 
-        if(self.ndvi.size):
+        if self.ndvi.size:
             return
 
-        if(not(self.nir.size) and not(self.r.size)):
+        if not (self.nir.size) and not (self.r.size):
             return "Red and Near-IR data missing"
-        if(not(self.nir.size)):
+        if not (self.nir.size):
             return "Near-IR data missing"
-        if(not(self.r.size)):
+        if not (self.r.size):
             return "Red data missing"
 
         self.report("Calculating NDVI           20%")
         self.ndvi = (self.nir - self.r) / (self.nir + self.r)
-
 
     def calc_PV(self):
 
@@ -96,11 +97,11 @@ class processor(object):
         Calculates proportion of vegetation
         """
 
-        if(self.pv.size):
+        if self.pv.size:
             return
 
         error = self.calc_NDVI()
-        if(error):
+        if error:
             return error
 
         data = {"ndvi_soil": 0.2, "ndvi_vegetation": 0.5}
@@ -116,17 +117,16 @@ class processor(object):
         self.report("Calculating PV             50%")
         self.pv **= 2
 
-
     def calc_LSE(self):
 
         """
         Calculates Land Surface Emmissivity
         """
 
-        if(self.lse.size):
+        if self.lse.size:
             return
         error = self.calc_PV()
-        if(error):
+        if error:
             return error
 
         data = {
@@ -139,16 +139,17 @@ class processor(object):
 
         self.lse = np.full(self.ndvi.shape, np.nan)
         self.lse[self.ndvi < 0] = data["water_emissivity"]
-        self.lse[np.logical_and(self.ndvi >= 0, self.ndvi < 0.2)] = data["soil_emissivity"]
+        self.lse[np.logical_and(self.ndvi >= 0, self.ndvi < 0.2)] = data[
+            "soil_emissivity"
+        ]
         self.report("Calculating LSE            70%")
-        self.lse[np.logical_and(self.ndvi >= 0.2, self.ndvi < 0.5)] = (
-                data["soil_emissivity"] + \
-                self.pv[np.logical_and(self.ndvi >= 0.2, self.ndvi < 0.5)] * \
-                (data["vegetation_emissivity"] - data["soil_emissivity"])
-                )
+        self.lse[np.logical_and(self.ndvi >= 0.2, self.ndvi < 0.5)] = data[
+            "soil_emissivity"
+        ] + self.pv[np.logical_and(self.ndvi >= 0.2, self.ndvi < 0.5)] * (
+            data["vegetation_emissivity"] - data["soil_emissivity"]
+        )
         self.report("Calculating LSE            80%")
         self.lse[self.ndvi >= 0.5] = data["vegetation_emissivity"]
-
 
     def calc_LST(self):
 
@@ -156,18 +157,20 @@ class processor(object):
         Calculates Land Surface Temperature
         """
 
-        if(self.lst.size):
+        if self.lst.size:
             return
         error = self.calc_BT()
-        if(error):
+        if error:
             return error
         error = self.calc_LSE()
-        if(error):
+        if error:
             return error
 
         data = {"lambda": 0.00115, "rho": 1.4388}  ##Verify values, only ratio important
         self.report("Calculating LST            90%")
-        self.lst = self.bt / (1 + (data["lambda"] * self.bt / data["rho"]) * np.log(self.lse))
+        self.lst = self.bt / (
+            1 + (data["lambda"] * self.bt / data["rho"]) * np.log(self.lse)
+        )
 
     @staticmethod
     def getBand(bandName, bands, mask):
@@ -177,7 +180,7 @@ class processor(object):
         Masks '0' values with numpy nan
         """
 
-        if(bandName in bands):
+        if bandName in bands:
             band = bands[bandName]
             band[np.logical_not(mask)] = np.nan
             return band
@@ -199,7 +202,7 @@ class processor(object):
         Inputs:
             bands - dict of numpy arrays, "Red", "Near-IR", "Thermal-IR" are the relevant keys
             sat_type - either "Landsat8" or "Landsat5"
-            required - boolean array of size 6, constitutes a request for some or all of
+            required - array of tuples of length 6, contains boolean and the name associated with layer in tuple
                         [toa, bt, ndvi, pv, lse, lst] in order.
             form - user interfacing element
         Returns:
@@ -211,15 +214,15 @@ class processor(object):
         self.form = form
         shape = np.array([])
 
-        if(not(list(bands.values()))):
+        if not (list(bands.values())):
             results["Error"] = "Files missing"
             return results
-        if("Shape" in bands):
+        if "Shape" in bands:
             shape = bands["Shape"]
             del bands["Shape"]
         tempshape = list(bands.values())[0].shape
         mask = np.full(tempshape, True)
-        if(shape.size):
+        if shape.size:
             mask[shape == 1] = False
         for layer in list(bands.values()):
             mask[layer == 0] = False
@@ -229,25 +232,24 @@ class processor(object):
         self.nir = processor.getBand("Near-IR", bands, mask)
         self.tir = processor.getBand("Thermal-IR", bands, mask)
 
-        # toa, bt, ndvi, pv, lse, lst = required
-        toa, bt, ndvi, pv, lse, lst = res for res in required
+        toa, bt, ndvi, pv, lse, lst = [res for res in required]
 
-        if(toa[0]):
+        if toa[0]:
             error = self.calc_TOA()
             results[toa[1]] = self.toa
-        if(bt[0]):
+        if bt[0]:
             error = self.calc_BT()
             results[bt[1]] = self.bt
-        if(ndvi[0]):
+        if ndvi[0]:
             error = self.calc_NDVI()
             results[ndvi[1]] = self.ndvi
-        if(pv[0]):
+        if pv[0]:
             error = self.calc_PV()
             results[pv[1]] = self.pv
-        if(lse[0]):
+        if lse[0]:
             error = self.calc_LSE()
             results[lse[1]] = self.lse
-        if(lst[0]):
+        if lst[0]:
             error = self.calc_LST()
             results[lst[1]] = self.lst
         results["Error"] = error

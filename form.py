@@ -6,8 +6,6 @@ import time
 
 from . import mainLST, benchmarker
 
-# import mainLST, benchmarker
-
 
 class MainWindow(QMainWindow):
 
@@ -97,6 +95,7 @@ class MainWindow(QMainWindow):
         label.setText("Select Outputs")
         label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(label)
+
         # checkbox for various outputs
         self.addCheckBox("TOA Spectral Radiance")
         self.addCheckBox("At Sensor Brightness Temperature")
@@ -225,6 +224,7 @@ class MainWindow(QMainWindow):
 
         """
         Add a checkbox (specifically for listing output types needed)
+        and a line edit to specify file name for output
         """
 
         widget = QWidget()
@@ -265,11 +265,3 @@ class MainWindow(QMainWindow):
     def runBenchmark(self):
 
         benchmarker.benchmark(self)
-
-
-"""
-app = QApplication([])
-window = MainWindow([])
-window.show()
-app.exec_()
-"""

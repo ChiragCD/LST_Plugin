@@ -3,9 +3,6 @@ from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
 from qgis.utils import iface
 
-import os
-
-# neccesary
 from . import resources, form, procedures, fileio
 
 ## Main class: LSTplugin
@@ -111,9 +108,6 @@ def processAll(form, filePaths, resultStates, satType, displayResults=True):
 
     form.showStatus("Displaying Outputs")
 
-    # one change here
-    # resultNames = ["TOA", "BT", "NDVI", "PV", "LSE", "LST"]
-    resultNames = []
     for res in resultStates:
         resultNames.append(res[1])
 
