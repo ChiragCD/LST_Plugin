@@ -229,25 +229,26 @@ class processor(object):
         self.nir = processor.getBand("Near-IR", bands, mask)
         self.tir = processor.getBand("Thermal-IR", bands, mask)
 
-        toa, bt, ndvi, pv, lse, lst = required
+        # toa, bt, ndvi, pv, lse, lst = required
+        toa, bt, ndvi, pv, lse, lst = res for res in required
 
-        if(toa):
+        if(toa[0]):
             error = self.calc_TOA()
-            results["TOA"] = self.toa
-        if(bt):
+            results[toa[1]] = self.toa
+        if(bt[0]):
             error = self.calc_BT()
-            results["BT"] = self.bt
-        if(ndvi):
+            results[bt[1]] = self.bt
+        if(ndvi[0]):
             error = self.calc_NDVI()
-            results["NDVI"] = self.ndvi
-        if(pv):
+            results[ndvi[1]] = self.ndvi
+        if(pv[0]):
             error = self.calc_PV()
-            results["PV"] = self.pv
-        if(lse):
+            results[pv[1]] = self.pv
+        if(lse[0]):
             error = self.calc_LSE()
-            results["LSE"] = self.lse
-        if(lst):
+            results[lse[1]] = self.lse
+        if(lst[0]):
             error = self.calc_LST()
-            results["LST"] = self.lst
+            results[lst[1]] = self.lst
         results["Error"] = error
         return results

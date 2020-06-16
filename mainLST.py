@@ -60,6 +60,7 @@ class LandSurfaceTemperature(object):
         window = form.MainWindow(self.iface)
         window.show()
 
+
 def displayOnScreen(resultStates, resultNames, filer):
 
     """
@@ -67,10 +68,13 @@ def displayOnScreen(resultStates, resultNames, filer):
     """
 
     for i in range(6):
-        if resultStates[i]:
-            iface.addRasterLayer(filer.generateFileName(resultNames[i], "TIF"), resultNames[i])
+        if resultStates[i][0]:
+            iface.addRasterLayer(
+                filer.generateFileName(resultNames[i], "TIF"), resultNames[i]
+            )
 
-def processAll(form, filePaths, resultStates, satType, displayResults = True):
+
+def processAll(form, filePaths, resultStates, satType, displayResults=True):
 
     """
     Main processing element, called every time Go is pressed
@@ -81,14 +85,14 @@ def processAll(form, filePaths, resultStates, satType, displayResults = True):
 
     form.showStatus("Loading Files")
 
-    if("zip" in filePaths):
+    if "zip" in filePaths:
         form.showStatus("Extracting Files")
         bands = filer.loadZip(filePaths)
         satType = bands["sat_type"]
         del bands["sat_type"]
     else:
         bands = filer.loadBands(filePaths)
-    if(bands["Error"]):
+    if bands["Error"]:
         form.showError(bands["Error"])
         return
     del bands["Error"]
@@ -96,7 +100,7 @@ def processAll(form, filePaths, resultStates, satType, displayResults = True):
     form.showStatus("Processing")
 
     results = processor.process(bands, satType, resultStates, form)
-    if(results["Error"]):
+    if results["Error"]:
         form.showError(results["Error"])
         return
     del results["Error"]
@@ -107,8 +111,13 @@ def processAll(form, filePaths, resultStates, satType, displayResults = True):
 
     form.showStatus("Displaying Outputs")
 
-    resultNames = ["TOA", "BT", "NDVI", "PV", "LSE", "LST"]
-    if(displayResults):
+    # one change here
+    # resultNames = ["TOA", "BT", "NDVI", "PV", "LSE", "LST"]
+    resultNames = []
+    for res in resultStates:
+        resultNames.append(res[1])
+
+    if displayResults:
         displayOnScreen(resultStates, resultNames, filer)
 
     form.showStatus("Finished")
