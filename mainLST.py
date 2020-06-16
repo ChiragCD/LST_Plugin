@@ -108,6 +108,7 @@ def processAll(form, filePaths, resultStates, satType, displayResults=True):
 
     form.showStatus("Displaying Outputs")
 
+    resultNames = []
     for res in resultStates:
         resultNames.append(res[1])
 

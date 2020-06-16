@@ -246,7 +246,7 @@ class processor(object):
         if (not (error) and ndvi[0]):
             error = self.calc_NDVI()
             results[ndvi[1]] = self.ndvi
-        if (not (error) and pv[0])
+        if (not (error) and pv[0]):
             error = self.calc_PV()
             results[pv[1]] = self.pv
         if (not (error) and lse[0]):
