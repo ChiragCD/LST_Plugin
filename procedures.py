@@ -226,6 +226,9 @@ class processor(object):
             mask[shape == 1] = False
         for layer in list(bands.values()):
             mask[layer == 0] = False
+        if(not(np.any(mask))):
+            results["Error"] = "Entire image masked - please check shapefile"
+            return results
 
         self.sat_type = sat_type
         self.r = processor.getBand("Red", bands, mask)
@@ -234,23 +237,24 @@ class processor(object):
 
         toa, bt, ndvi, pv, lse, lst = [res for res in required]
 
-        if toa[0]:
+        if (not (error) and toa[0]):
             error = self.calc_TOA()
             results[toa[1]] = self.toa
-        if bt[0]:
+        if (not (error) and bt[0]):
             error = self.calc_BT()
             results[bt[1]] = self.bt
-        if ndvi[0]:
+        if (not (error) and ndvi[0]):
             error = self.calc_NDVI()
             results[ndvi[1]] = self.ndvi
-        if pv[0]:
+        if (not (error) and pv[0])
             error = self.calc_PV()
             results[pv[1]] = self.pv
-        if lse[0]:
+        if (not (error) and lse[0]):
             error = self.calc_LSE()
             results[lse[1]] = self.lse
-        if lst[0]:
+        if (not (error) and lst[0]):
             error = self.calc_LST()
             results[lst[1]] = self.lst
+        
         results["Error"] = error
         return results
