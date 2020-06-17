@@ -237,7 +237,7 @@ class fileHandler(object):
         Make a new directory under the operating folder, for outputs
         """
         if opFolder:
-            outfolder = opFolder
+            outfolder = opFolder + "/LandSurfaceTemperature"
         else:
             outfolder = self.folder + "/LandSurfaceTemperature"
 
