@@ -6,6 +6,7 @@ from qgis.core import QgsVectorLayer, QgsRasterLayer, QgsCoordinateTransform, Qg
 
 gdal.UseExceptions()
 
+
 class fileHandler(object):
 
     """
@@ -14,8 +15,8 @@ class fileHandler(object):
 
     def __init__(self):
 
-        self.folder = ""            ## Folder in which all operations are ongoing
-        self.outfolder = ""         ## Folder in which to place outputs
+        self.folder = ""  ## Folder in which all operations are ongoing
+        self.outfolder = ""  ## Folder in which to place outputs
 
         ## Tif writing data, copied from input
         self.rows = 0
@@ -33,9 +34,9 @@ class fileHandler(object):
 
         im = gdal.Open(filepath)
         array = im.ReadAsArray().astype(np.float32)
-        if(not(self.folder)):
-            self.folder = filepath[:filepath.rfind('/')]
-        if(not(self.driver)):
+        if not (self.folder):
+            self.folder = filepath[: filepath.rfind("/")]
+        if not (self.driver):
             self.rows = im.RasterYSize
             self.cols = im.RasterXSize
             self.driver = im.GetDriver()
@@ -57,62 +58,66 @@ class fileHandler(object):
 
         filepath = filePaths["zip"]
         recognised = False
-        bands = {"Error" : None}
+        bands = {"Error": None}
         for ext in [".tar.gz", ".tar", ".zip", ".gz"]:
-            if(filepath.lower().endswith(ext)):
+            if filepath.lower().endswith(ext):
                 recognised = True
-        if(not(recognised)):
+        if not (recognised):
             bands["Error"] = "Unknown compressed file format"
             return bands
-        self.folder = filepath[:filepath.rfind("/")]
+        self.folder = filepath[: filepath.rfind("/")]
 
-        if(filepath.lower().endswith(".zip")):
-            compressed = ZipFile(filepath, 'r')
+        if filepath.lower().endswith(".zip"):
+            compressed = ZipFile(filepath, "r")
             extract = compressed.extract
             listoffiles = compressed.namelist()
-        elif(filepath.lower().endswith(".gz")):
+        elif filepath.lower().endswith(".gz"):
             compressed = tarfile.open(filepath, "r:gz")
             extract = compressed.extract
             listoffiles = [member.name for member in compressed.getmembers()]
         else:
-            compressed = tarfile.open(filepath, 'r')
+            compressed = tarfile.open(filepath, "r")
             extract = compressed.extract
             listoffiles = compressed.getmembers()
 
         for filename in listoffiles:
-            if(filename.upper().endswith("MTL.TXT")):
-                if(filename[:4] == "LC08"):
+            if filename.upper().endswith("MTL.TXT"):
+                if filename[:4] == "LC08":
                     bands["sat_type"] = "Landsat8"
                     sat_type = "Landsat8"
-                if(filename[:4] == "LT05"):
+                if filename[:4] == "LT05":
                     bands["sat_type"] = "Landsat5"
                     sat_type = "Landsat5"
-        if("sat_type" not in bands):
-            bands["Error"] = "Unknown satellite - Please verify that files have not been renamed"
+        if "sat_type" not in bands:
+            bands[
+                "Error"
+            ] = "Unknown satellite - Please verify that files have not been renamed"
             compressed.close()
             return bands
 
-        sat_bands = {"Landsat5" : {"Red" : "B3", "Near-IR" : "B4", "Thermal-IR" : "B6"},
-                "Landsat8" : {"Red" : "B4", "Near-IR" : "B5", "Thermal-IR" : "B10"} }
+        sat_bands = {
+            "Landsat5": {"Red": "B3", "Near-IR": "B4", "Thermal-IR": "B6"},
+            "Landsat8": {"Red": "B4", "Near-IR": "B5", "Thermal-IR": "B10"},
+        }
 
         shapefile = None
-        if("Shape" in filePaths):
+        if "Shape" in filePaths:
             shapefile = filePaths["Shape"]
 
         filePaths = dict()
         for band in ("Red", "Near-IR", "Thermal-IR"):
             bands[band] = np.array([])
             for filename in listoffiles:
-                if(filename.upper().endswith(sat_bands[sat_type][band] + ".TIF")):
+                if filename.upper().endswith(sat_bands[sat_type][band] + ".TIF"):
                     extract(filename)
                     filePaths[band] = filename
         compressed.close()
         for band in ("Red", "Near-IR", "Thermal-IR"):
             bands[band] = self.readBand(filePaths[band])
 
-        if(shapefile):
+        if shapefile:
             bands["Shape"] = self.readShapeFile(shapefile)
-            if(type(bands["Shape"]) == str):
+            if type(bands["Shape"]) == str:
                 bands["Error"] = bands["Shape"]
                 return bands
         return bands
@@ -123,28 +128,28 @@ class fileHandler(object):
         Gets band data as numpy arrays, from a dict of filepaths
         """
 
-        bands = {"Error" : None}
+        bands = {"Error": None}
         for band in filepaths:
-            if(band == "Shape"):
+            if band == "Shape":
                 continue
-            if(not(filepaths[band].lower().endswith(".tif"))):
+            if not (filepaths[band].lower().endswith(".tif")):
                 bands["Error"] = "Bands must be TIFs"
                 return bands
             bands[band] = self.readBand(filepaths[band])
-        if("Shape" in filepaths):
+        if "Shape" in filepaths:
             bands["Shape"] = self.readShapeFile(filepaths["Shape"])
-            if(type(bands["Shape"]) == str):
+            if type(bands["Shape"]) == str:
                 bands["Error"] = bands["Shape"]
                 return bands
         return bands
-    
+
     def readShapeFile(self, vectorfname):
 
         """
         Get a rasterized numpy array from the features of a shapefile
         """
-        
-        if(not(vectorfname.lower().endswith(".shp"))):
+
+        if not (vectorfname.lower().endswith(".shp")):
             return "Shapes must be SHPs"
         vlayer = self.loadVectorLayer(vectorfname)
         shapefile = self.generateFileName("Shape", "TIF")
@@ -159,7 +164,9 @@ class fileHandler(object):
         Should not be used directly, use saveAll instead
         """
 
-        outDS = self.driver.Create(fname, self.cols, self.rows, bands=1, eType = gdal.GDT_Float32)
+        outDS = self.driver.Create(
+            fname, self.cols, self.rows, bands=1, eType=gdal.GDT_Float32
+        )
         outBand = outDS.GetRasterBand(1)
         outBand.WriteArray(array)
         outBand.FlushCache()
@@ -174,7 +181,7 @@ class fileHandler(object):
         https://gis.stackexchange.com/questions/37238/writing-numpy-array-to-raster-file
         was incredibly useful.
         """
-    
+
     def loadVectorLayer(self, fname):
 
         """
@@ -183,20 +190,26 @@ class fileHandler(object):
 
         layer = QgsVectorLayer(fname, "Shape", "ogr")
         return layer
-    
-    def rasterize(self, vlayer, fname, res = 30):
+
+    def rasterize(self, vlayer, fname, res=30):
 
         """
         Convert a vector layer to a raster layer, handle CRS differences
         """
 
-        rfile = self.driver.Create(fname, self.cols, self.rows, bands=1, eType = gdal.GDT_Float32)
+        rfile = self.driver.Create(
+            fname, self.cols, self.rows, bands=1, eType=gdal.GDT_Float32
+        )
         rfile.SetProjection(self.projection)
         rfile.SetGeoTransform(self.geoTransform)
         rfile = None
 
-        if(self.crs != vlayer.crs()):
-            parameters = {"INPUT" : vlayer, "TARGET_CRS" : self.crs, "OUTPUT" : "TEMPORARY_OUTPUT"}
+        if self.crs != vlayer.crs():
+            parameters = {
+                "INPUT": vlayer,
+                "TARGET_CRS": self.crs,
+                "OUTPUT": "TEMPORARY_OUTPUT",
+            }
             vlayer = processing.run("native:reprojectlayer", parameters)["OUTPUT"]
 
         xmin = self.extent.xMinimum()
@@ -205,32 +218,35 @@ class fileHandler(object):
         ymax = self.extent.yMaximum()
 
         parameters = {
-            "INPUT" : vlayer,
+            "INPUT": vlayer,
             "HEIGHT": res,
-            "WIDTH" : res,
-            "BURN"  : 0,
-            "UNITS" : 1,
-            "EXTENT":"%f,%f,%f,%f"% (xmin, xmax, ymin, ymax),
-            "DATA_TYPE" : 5,
-            "NODATA" : 1,
-            "OUTPUT": fname
+            "WIDTH": res,
+            "BURN": 0,
+            "UNITS": 1,
+            "EXTENT": "%f,%f,%f,%f" % (xmin, xmax, ymin, ymax),
+            "DATA_TYPE": 5,
+            "NODATA": 1,
+            "OUTPUT": fname,
         }
         processing.run("gdal:rasterize", parameters)
         vlayer = None
 
-    def prepareOutFolder(self):
+    def prepareOutFolder(self, opFolder):
 
         """
         Make a new directory under the operating folder, for outputs
         """
+        if not opFolder:
+            outfolder = self.folder + "/LandSurfaceTemperature"
 
-        outfolder = self.folder + "/LandSurfaceTemperature"
-        while os.path.isdir(outfolder):
-            if outfolder[-1].isnumeric():
-                outfolder = outfolder[:-1] + str(1 + int(outfolder[-1]))
-            else:
-                outfolder += "1"
-        os.makedirs(outfolder)
+            while os.path.isdir(outfolder):
+                if outfolder[-1].isnumeric():
+                    outfolder = outfolder[:-1] + str(1 + int(outfolder[-1]))
+                else:
+                    outfolder += "1"
+            os.makedirs(outfolder)
+        else:
+            outfolder = opFolder
         self.outfolder = outfolder
 
     def generateFileName(self, topic, ftype):
@@ -238,19 +254,19 @@ class fileHandler(object):
         """
         Generate a filepath for topic
         """
-        
-        if(not(self.outfolder)):
+
+        if not (self.outfolder):
             self.prepareOutFolder()
         return self.outfolder + "/" + topic + "." + ftype
 
-    def saveAll(self, arrays):
+    def saveAll(self, arrays, opFolder=""):
 
         """
         Write each of a dict of arrays as TIF outputs
         """
 
-        if(not(self.outfolder)):
-            self.prepareOutFolder()
+        if not (self.outfolder):
+            self.prepareOutFolder(opFolder)
 
         for resultName in arrays:
             filepath = self.generateFileName(resultName, "TIF")

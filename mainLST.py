@@ -104,7 +104,7 @@ def processAll(form, filePaths, resultStates, satType, displayResults=True):
 
     form.showStatus("Saving Outputs")
 
-    filer.saveAll(results)
+    filer.saveAll(results, filePaths["output"])
 
     form.showStatus("Displaying Outputs")
 

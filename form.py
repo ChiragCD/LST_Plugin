@@ -23,6 +23,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
 
         self.filePaths = dict()
+        self.filePaths["output"] = None
         self.checkboxes = []
         self.layerInfor = dict()
         layers = iface.mapCanvas().layers()
@@ -104,6 +105,20 @@ class MainWindow(QMainWindow):
         self.addCheckBox("Land Surface Emissivity")
         self.addCheckBox("Land Surface Temperature", defaultChecked=True)
 
+        # add option to specify file output destination
+        sfoldlayout = QHBoxLayout()
+        pathFold = QLineEdit()
+        pathFold.setText("Output Folder Destination")
+        sfoldlayout.addWidget(pathFold)
+        selfold = QPushButton()
+        selfold.setText("Select Output Destination")
+        selfold.clicked.connect(lambda: self.getFolder(pathFold, "output"))
+        sfoldlayout.addWidget(selfold)
+        filesel = QWidget()
+        filesel.setLayout(sfoldlayout)
+        self.layout.addWidget(filesel)
+
+        # horizontal line seperator
         h_line = QFrame()
         h_line.setFrameShape(QFrame.HLine)
         self.layout.addWidget(h_line)
@@ -195,6 +210,17 @@ class MainWindow(QMainWindow):
             return
         pathField.setText(fp[0])
         self.filePaths[band] = fp[0]
+
+    def getFolder(self, pathField, name):
+        """
+        Get path of foleder selected
+        """
+
+        fp = QFileDialog.getExistingDirectory()
+        if not fp:
+            return
+        pathField.setText(fp)
+        self.filePaths[name] = fp
 
     def goFunc(self):
 
