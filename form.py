@@ -23,6 +23,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
 
         self.filePaths = dict()
+        self.filePaths["output"] = None
         self.checkboxes = []
         self.layerInfor = dict()
         layers = iface.mapCanvas().layers()

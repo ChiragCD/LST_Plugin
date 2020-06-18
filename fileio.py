@@ -236,17 +236,17 @@ class fileHandler(object):
         """
         Make a new directory under the operating folder, for outputs
         """
-        if opFolder:
-            outfolder = opFolder + "/LandSurfaceTemperature"
-        else:
+        if not opFolder:
             outfolder = self.folder + "/LandSurfaceTemperature"
 
-        while os.path.isdir(outfolder):
-            if outfolder[-1].isnumeric():
-                outfolder = outfolder[:-1] + str(1 + int(outfolder[-1]))
-            else:
-                outfolder += "1"
-        os.makedirs(outfolder)
+            while os.path.isdir(outfolder):
+                if outfolder[-1].isnumeric():
+                    outfolder = outfolder[:-1] + str(1 + int(outfolder[-1]))
+                else:
+                    outfolder += "1"
+            os.makedirs(outfolder)
+        else:
+            outfolder = opFolder
         self.outfolder = outfolder
 
     def generateFileName(self, topic, ftype):
