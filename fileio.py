@@ -231,7 +231,7 @@ class fileHandler(object):
         processing.run("gdal:rasterize", parameters)
         vlayer = None
 
-    def prepareOutFolder(self, opFolder):
+    def prepareOutFolder(self, opFolder=""):
 
         """
         Make a new directory under the operating folder, for outputs
@@ -259,14 +259,14 @@ class fileHandler(object):
             self.prepareOutFolder()
         return self.outfolder + "/" + topic + "." + ftype
 
-    def saveAll(self, arrays, opFolder=""):
+    def saveAll(self, arrays):
 
         """
         Write each of a dict of arrays as TIF outputs
         """
 
         if not (self.outfolder):
-            self.prepareOutFolder(opFolder)
+            self.prepareOutFolder()
 
         for resultName in arrays:
             filepath = self.generateFileName(resultName, "TIF")

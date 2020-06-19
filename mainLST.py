@@ -82,6 +82,10 @@ def processAll(form, filePaths, resultStates, satType, displayResults=True):
 
     form.showStatus("Loading Files")
 
+    if("output" in filePaths):
+        filer.prepareOutFolder(filePaths["output"])
+        del filePaths["output"]
+
     if "zip" in filePaths:
         form.showStatus("Extracting Files")
         bands = filer.loadZip(filePaths)
@@ -104,7 +108,7 @@ def processAll(form, filePaths, resultStates, satType, displayResults=True):
 
     form.showStatus("Saving Outputs")
 
-    filer.saveAll(results, filePaths["output"])
+    filer.saveAll(results)
 
     form.showStatus("Displaying Outputs")
 
