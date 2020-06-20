@@ -116,16 +116,15 @@ class preprocess(QgsTask):
         del self.bands["Error"]
         return True
     
-    def cancel(self):
-
-        super().cancel()
-    
     def finished(self, results = None):
 
+        print("Ending pre")
+        self.setProgress(100)
         if(not(results)):
             self.error = "Pre-Processing Crashed"
         if(self.error):
             self.parent.setError(self.error)
+        print("Error", self.error)
 
 class postprocess(QgsTask):
 
@@ -154,17 +153,17 @@ class postprocess(QgsTask):
 
         form.showStatus("Finished")
         self.setProgress(99)
-    
-    def cancel(self):
-
-        super().cancel()
 
     def finished(self, results = None):
+
+        print("Ending post")        
+        self.setProgress(100)
         if(not(results)):
             self.error = "Post-Processing Crashed"
         if(self.error):
             self.parent.setError(self.error)
         self.parent.done = True
+        print("Error", self.error)
 
 class CarrierTask(QgsTask):
 
@@ -175,27 +174,30 @@ class CarrierTask(QgsTask):
         self.done = False
     
     def run(self):
-        while(not(self.done)):
-            if(self.error):
-                return True
-            time.sleep(0.1)
+        while(not(self.done) and not(self.error)):
+            time.sleep(1)
         return True
-    
-    def cancel(self):
-
-        super().cancel()
     
     def finished(self, result = None):
 
+        print("Carrier finishing")
+        print("Carrier Error status", self.error)
+        self.setProgress(100)
         if(not(result)):
+            print("Carrier Crash")
             self.error = "Crash"        
         # print("Finishing", self.error)
         if(self.error):
+            print("Carrier printing " + self.error)
             self.form.showError(self.error)
+        print("Carrier calling endrun")
         self.form.endRun()
     
     def setError(self, msg):
 
         if(self.error):
+            print("Error filled Virtual", self.error)
             return
         self.error = msg
+        self.done = True
+        self.finished(True)

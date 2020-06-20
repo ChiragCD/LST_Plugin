@@ -25,6 +25,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
 
         self.filePaths = dict()
+        self.running = False
         self.error = None
         self.checkboxes = []
         self.layerInfor = dict()
@@ -230,6 +231,11 @@ class MainWindow(QMainWindow):
         Begins the processing
         """
 
+        if(self.running):
+            self.showError("Busy, please wait till end of execution")
+            return
+        self.running = True
+
         resultStates = []
         for box in self.checkboxes:
             resultStates.append((box[0].isChecked(), box[1].text() or box[0].text()))
@@ -252,19 +258,25 @@ class MainWindow(QMainWindow):
         QgsApplication.taskManager().addTask(self.virtualTask)
 
         return
-        end_time = time.time()
-        self.showStatus(
-            "Finished, process time - " + str(int(end_time - start_time)) + " seconds"
-        )
     
     def endRun(self):
 
-        self.preproc.cancel()
-        self.proc.cancel()
-        self.postproc.cancel()
-        self.virtualTask.cancel()
+        print("Calling endrun")
+        # if(self.preproc.progress() != 100):
+        #     print("Cancelling preproc")
+        #     self.preproc.cancel()
+        # if(self.proc.progress() != 100):
+        #     print("Cancelling proc")
+        #     self.proc.cancel()
+        # if(self.postproc.progress() != 100):
+        #     print("Cancelling postproc")
+        #     self.postproc.cancel()
+        if(self.virtualTask.progress() != 100):
+            print("Cancelling virtual", self.virtualTask.canCancel())
+            self.virtualTask.cancel()
         time_taken = int(time.time() - self.start_time)
         self.showStatus("Finished, process time - " + str(time_taken) + " seconds")
+        self.running = False
 
     def addCheckBox(self, text, defaultChecked=False):
 
@@ -313,3 +325,9 @@ class MainWindow(QMainWindow):
         self.showStatus(err)
         messageBox = QMessageBox()
         messageBox.critical(None, "", err)
+
+    def closeEvent(self, event):
+
+        print("closing")
+        if(self.running):
+            self.endRun()

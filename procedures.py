@@ -256,14 +256,12 @@ class processor(QgsTask):
             self.results[lst[1]] = self.lst
         return True
     
-    def cancel(self):
-
-        super().cancel()
-    
     def finished(self, result = None):
 
-        self.setProgress(40)
+        print("Ending proc")
+        self.setProgress(100)
         if(not(result)):
             self.error = "Calculations Crash"
         if(self.error):
             self.parent.setError(self.error)
+        print("Error", self.error)
