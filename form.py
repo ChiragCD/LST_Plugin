@@ -2,9 +2,11 @@ from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
 
+from qgis.core import *
+
 import time
 
-from . import mainLST
+from . import mainLST, procedures
 
 
 class MainWindow(QMainWindow):
@@ -23,6 +25,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
 
         self.filePaths = dict()
+        self.error = None
         self.checkboxes = []
         self.layerInfor = dict()
         layers = iface.mapCanvas().layers()
@@ -237,12 +240,31 @@ class MainWindow(QMainWindow):
             else self.radios[1].text()
         )
 
-        start_time = time.time()
-        mainLST.processAll(self, self.filePaths, resultStates, satType)
+        self.start_time = time.time()
+
+        self.virtualTask = mainLST.CarrierTask(self)
+        self.preproc = mainLST.preprocess(self.filePaths, resultStates, satType, self.virtualTask)
+        self.proc = procedures.processor(self.preproc, resultStates, self.virtualTask)
+        self.postproc = mainLST.postprocess(self.proc, self.virtualTask)
+        self.virtualTask.addSubTask(self.preproc)
+        self.virtualTask.addSubTask(self.proc, [self.preproc])
+        self.virtualTask.addSubTask(self.postproc, [self.proc])
+        QgsApplication.taskManager().addTask(self.virtualTask)
+
+        return
         end_time = time.time()
         self.showStatus(
             "Finished, process time - " + str(int(end_time - start_time)) + " seconds"
         )
+    
+    def endRun(self):
+
+        self.preproc.cancel()
+        self.proc.cancel()
+        self.postproc.cancel()
+        self.virtualTask.cancel()
+        time_taken = int(time.time() - self.start_time)
+        self.showStatus("Finished, process time - " + str(time_taken) + " seconds")
 
     def addCheckBox(self, text, defaultChecked=False):
 
@@ -275,7 +297,12 @@ class MainWindow(QMainWindow):
         Show a message on the status bar
         """
 
+        text = str(text)
         self.status.showMessage(text, 60000)
+    
+    def setError(self, msg):
+
+        self.error = msg
 
     def showError(self, err):
 

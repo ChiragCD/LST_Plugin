@@ -1,19 +1,25 @@
 import numpy as np
+from qgis.core import *
 
 
-class processor(object):
+class processor(QgsTask):
 
     """
     Called for numpy array manipulation
     """
 
-    def __init__(self):
+    def __init__(self, input_object, required, parent):
 
         """
         Initializes all numpy arrays
         """
 
-        self.sat_type = None
+        QgsTask.__init__(self, "Processing Task")
+        self.setProgress(29.0)
+
+        self.input_object = input_object
+        self.required = required
+        self.parent = parent
 
         self.r = np.array([])
         self.nir = np.array([])
@@ -26,7 +32,8 @@ class processor(object):
         self.lse = np.array([])
         self.lst = np.array([])
 
-        self.form = None
+        self.error = None
+        self.results = dict()
 
     def calc_TOA(self):
 
@@ -46,7 +53,7 @@ class processor(object):
             },  ##-0.19 = 0.1 - 0.29 (landsat 8 band 10 correction)
             "Landsat5": {"mul": 0.055375, "add": 1.18243},
         }
-        self.report("Calculating TOA            0%")
+        self.setProgress(30)
         self.toa = (self.tir * data[self.sat_type]["mul"]) + data[self.sat_type]["add"]
 
     def calc_BT(self):
@@ -66,7 +73,7 @@ class processor(object):
             "Landsat8": {"K1": 774.8853, "K2": 1321.0789},
             "Landsat5": {"K1": 607.76, "K2": 1260.56},
         }
-        self.report("Calculating BT             10%")
+        self.setProgress(31)
         self.bt = (
             data[self.sat_type]["K2"]
             / np.log((data[self.sat_type]["K1"] / self.toa) + 1)
@@ -88,7 +95,7 @@ class processor(object):
         if not (self.r.size):
             return "Red data missing"
 
-        self.report("Calculating NDVI           20%")
+        self.setProgress(32)
         self.ndvi = (self.nir - self.r) / (self.nir + self.r)
 
     def calc_PV(self):
@@ -109,12 +116,12 @@ class processor(object):
         scale = data["ndvi_vegetation"] - data["ndvi_soil"]
         offset = data["ndvi_soil"] / scale
 
-        self.report("Calculating PV             30%")
+        self.setProgress(33)
         self.pv = (self.ndvi * scale) - offset
-        self.report("Calculating PV             40%")
+        self.setProgress(34)
         self.pv[self.ndvi < 0.2] = 0
         self.pv[self.ndvi > 0.5] = 1
-        self.report("Calculating PV             50%")
+        self.setProgress(35)
         self.pv **= 2
 
     def calc_LSE(self):
@@ -135,20 +142,20 @@ class processor(object):
             "vegetation_emissivity": 0.973,
         }
 
-        self.report("Calculating LSE            60%")
+        self.setProgress(36)
 
         self.lse = np.full(self.ndvi.shape, np.nan)
         self.lse[self.ndvi < 0] = data["water_emissivity"]
         self.lse[np.logical_and(self.ndvi >= 0, self.ndvi < 0.2)] = data[
             "soil_emissivity"
         ]
-        self.report("Calculating LSE            70%")
+        self.setProgress(37)
         self.lse[np.logical_and(self.ndvi >= 0.2, self.ndvi < 0.5)] = data[
             "soil_emissivity"
         ] + self.pv[np.logical_and(self.ndvi >= 0.2, self.ndvi < 0.5)] * (
             data["vegetation_emissivity"] - data["soil_emissivity"]
         )
-        self.report("Calculating LSE            80%")
+        self.setProgress(38)
         self.lse[self.ndvi >= 0.5] = data["vegetation_emissivity"]
 
     def calc_LST(self):
@@ -167,35 +174,26 @@ class processor(object):
             return error
 
         data = {"lambda": 0.00115, "rho": 1.4388}  ##Verify values, only ratio important
-        self.report("Calculating LST            90%")
+        self.setProgress(39)
         self.lst = self.bt / (
             1 + (data["lambda"] * self.bt / data["rho"]) * np.log(self.lse)
         )
 
-    @staticmethod
-    def getBand(bandName, bands, mask):
+    def getBand(self, bandName):
 
         """
         Gets individual bands for dict of bands
         Masks '0' values with numpy nan
         """
 
-        if bandName in bands:
-            band = bands[bandName]
-            band[np.logical_not(mask)] = np.nan
+        if bandName in self.bands:
+            band = self.bands[bandName]
+            band[np.logical_not(self.mask)] = np.nan
             return band
         else:
             return np.array([])
 
-    def report(self, text):
-
-        """
-        Asks the UI to show a message on the status bar
-        """
-
-        self.form.showStatus(text)
-
-    def process(self, bands, sat_type, required, form):
+    def run (self):
 
         """
         Only this function should be accessed from outside this file
@@ -209,52 +207,63 @@ class processor(object):
             A dict of numpy arrays, with a key "Error" holding error message, if any
         """
 
-        error = None
-        results = dict()
-        self.form = form
+        # self.__init__(self.input_object, self.required, self.parent)
+        self.bands = self.input_object.bands
+        self.sat_type = self.input_object.satType
+        self.filer = self.input_object.filer
+        
         shape = np.array([])
 
-        if not (list(bands.values())):
-            results["Error"] = "Files missing"
-            return results
-        if "Shape" in bands:
-            shape = bands["Shape"]
-            del bands["Shape"]
-        tempshape = list(bands.values())[0].shape
-        mask = np.full(tempshape, True)
+        if not (list(self.bands.values())):
+            self.error = "Files missing"
+            return True
+        if "Shape" in self.bands:
+            shape = self.bands["Shape"]
+            del self.bands["Shape"]
+        tempshape = list(self.bands.values())[0].shape
+        self.mask = np.full(tempshape, True)
         if shape.size:
-            mask[shape == 1] = False
-        for layer in list(bands.values()):
-            mask[layer == 0] = False
-        if(not(np.any(mask))):
-            results["Error"] = "Entire image masked - please check shapefile"
-            return results
+            self.mask[shape == 1] = False
+        for layer in list(self.bands.values()):
+            self.mask[layer == 0] = False
+        if(not(np.any(self.mask))):
+            self.error = "Entire image masked - please check shapefile"
+            return True
 
-        self.sat_type = sat_type
-        self.r = processor.getBand("Red", bands, mask)
-        self.nir = processor.getBand("Near-IR", bands, mask)
-        self.tir = processor.getBand("Thermal-IR", bands, mask)
+        self.r = self.getBand("Red")
+        self.nir = self.getBand("Near-IR")
+        self.tir = self.getBand("Thermal-IR")
 
-        toa, bt, ndvi, pv, lse, lst = [res for res in required]
+        toa, bt, ndvi, pv, lse, lst = [res for res in self.required]
 
-        if (not (error) and toa[0]):
-            error = self.calc_TOA()
-            results[toa[1]] = self.toa
-        if (not (error) and bt[0]):
-            error = self.calc_BT()
-            results[bt[1]] = self.bt
-        if (not (error) and ndvi[0]):
-            error = self.calc_NDVI()
-            results[ndvi[1]] = self.ndvi
-        if (not (error) and pv[0]):
-            error = self.calc_PV()
-            results[pv[1]] = self.pv
-        if (not (error) and lse[0]):
-            error = self.calc_LSE()
-            results[lse[1]] = self.lse
-        if (not (error) and lst[0]):
-            error = self.calc_LST()
-            results[lst[1]] = self.lst
-        
-        results["Error"] = error
-        return results
+        if (not(self.error) and toa[0]):
+            self.error = self.calc_TOA()
+            self.results[toa[1]] = self.toa
+        if (not(self.error) and bt[0]):
+            self.error = self.calc_BT()
+            self.results[bt[1]] = self.bt
+        if (not(self.error) and ndvi[0]):
+            self.error = self.calc_NDVI()
+            self.results[ndvi[1]] = self.ndvi
+        if (not(self.error) and pv[0]):
+            self.error = self.calc_PV()
+            self.results[pv[1]] = self.pv
+        if (not(self.error) and lse[0]):
+            self.error = self.calc_LSE()
+            self.results[lse[1]] = self.lse
+        if (not(self.error) and lst[0]):
+            self.error = self.calc_LST()
+            self.results[lst[1]] = self.lst
+        return True
+    
+    def cancel(self):
+
+        super().cancel()
+    
+    def finished(self, result = None):
+
+        self.setProgress(40)
+        if(not(result)):
+            self.error = "Calculations Crash"
+        if(self.error):
+            self.parent.setError(self.error)
