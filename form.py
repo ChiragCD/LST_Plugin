@@ -2,9 +2,11 @@ from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
 
+from qgis.core import *
+
 import time
 
-from . import mainLST
+from . import mainLST, procedures
 
 
 class MainWindow(QMainWindow):
@@ -23,6 +25,8 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
 
         self.filePaths = dict()
+        self.running = False
+        self.error = None
         self.checkboxes = []
         self.layerInfor = dict()
         layers = iface.mapCanvas().layers()
@@ -227,9 +231,14 @@ class MainWindow(QMainWindow):
         Begins the processing
         """
 
-        resultStates = []
+        if(self.running):
+            self.showError("Busy, please wait till end of execution")
+            return
+        self.running = True
+
+        self.resultStates = []
         for box in self.checkboxes:
-            resultStates.append((box[0].isChecked(), box[1].text() or box[0].text()))
+            self.resultStates.append((box[0].isChecked(), box[1].text() or box[0].text()))
 
         satType = (
             self.radios[0].text()
@@ -237,12 +246,33 @@ class MainWindow(QMainWindow):
             else self.radios[1].text()
         )
 
-        start_time = time.time()
-        mainLST.processAll(self, self.filePaths, resultStates, satType)
-        end_time = time.time()
-        self.showStatus(
-            "Finished, process time - " + str(int(end_time - start_time)) + " seconds"
-        )
+        self.start_time = time.time()
+
+        self.virtualTask = mainLST.CarrierTask(self)
+        self.virtualTask.progressChanged.connect(self.update_progress)
+        self.preproc = mainLST.preprocess(self.filePaths, self.resultStates, satType, self.virtualTask)
+        self.proc = procedures.processor(self.preproc, self.resultStates, self.virtualTask)
+        self.postproc = mainLST.postprocess(self.proc, self.virtualTask)
+        self.virtualTask.addSubTask(self.preproc)
+        self.virtualTask.addSubTask(self.proc, [self.preproc])
+        self.virtualTask.addSubTask(self.postproc, [self.proc])
+        QgsApplication.taskManager().addTask(self.virtualTask)
+
+        return
+    
+    def update_progress(self):
+        
+        self.showStatus(self.virtualTask.notification)
+    
+    def endRun(self):
+
+        if(self.virtualTask.progress() != 100):
+            self.virtualTask.cancel()
+        else:
+            mainLST.displayOnScreen(self.resultStates, self.postproc.filer)
+        time_taken = int(time.time() - self.start_time)
+        self.showStatus("Finished, process time - " + str(time_taken) + " seconds")
+        self.running = False
 
     def addCheckBox(self, text, defaultChecked=False):
 
@@ -275,6 +305,7 @@ class MainWindow(QMainWindow):
         Show a message on the status bar
         """
 
+        text = str(text)
         self.status.showMessage(text, 60000)
 
     def showError(self, err):
@@ -286,3 +317,8 @@ class MainWindow(QMainWindow):
         self.showStatus(err)
         messageBox = QMessageBox()
         messageBox.critical(None, "", err)
+
+    def closeEvent(self, event):
+
+        if(self.running):
+            self.endRun()

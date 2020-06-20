@@ -2,6 +2,9 @@ from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
 from qgis.utils import iface
+from qgis.core import *
+
+import time
 
 from . import resources, form, procedures, fileio
 
@@ -58,11 +61,15 @@ class LandSurfaceTemperature(object):
         window.show()
 
 
-def displayOnScreen(resultStates, resultNames, filer):
+def displayOnScreen(resultStates, filer):
 
     """
     Display generated outputs as layers on the interface
     """
+
+    resultNames = []
+    for res in resultStates:
+        resultNames.append(res[1])
 
     for i in range(6):
         if resultStates[i][0]:
@@ -70,53 +77,117 @@ def displayOnScreen(resultStates, resultNames, filer):
                 filer.generateFileName(resultNames[i], "TIF"), resultNames[i]
             )
 
+class preprocess(QgsTask):
 
-def processAll(form, filePaths, resultStates, satType, displayResults=True):
+    def __init__(self, filePaths, resultStates, satType, parent):
 
-    """
-    Main processing element, called every time Go is pressed
-    """
+        QgsTask.__init__(self, "Inputs Processor")
 
-    filer = fileio.fileHandler()
-    processor = procedures.processor()
+        self.filePaths = filePaths
+        self.resultStates = resultStates
+        self.satType = satType
+        self.parent = parent
 
-    form.showStatus("Loading Files")
+        self.bands = dict()
+        self.filer = None
+        self.error = None
 
-    if("output" in filePaths):
-        filer.prepareOutFolder(filePaths["output"])
-        del filePaths["output"]
+    def run(self):
 
-    if "zip" in filePaths:
-        form.showStatus("Extracting Files")
-        bands = filer.loadZip(filePaths)
-        satType = bands["sat_type"]
-        del bands["sat_type"]
-    else:
-        bands = filer.loadBands(filePaths)
-    if bands["Error"]:
-        form.showError(bands["Error"])
-        return
-    del bands["Error"]
+        """
+        Main processing element, called every time Go is pressed
+        """
 
-    form.showStatus("Processing")
+        self.filer = fileio.fileHandler()
+        self.parent.updateProgress(0, "0 % Starting, setting optional out folder")
 
-    results = processor.process(bands, satType, resultStates, form)
-    if results["Error"]:
-        form.showError(results["Error"])
-        return
-    del results["Error"]
+        if("output" in self.filePaths):
+            self.filer.prepareOutFolder(self.filePaths["output"])
+            del self.filePaths["output"]
+        
+        self.parent.updateProgress(5, "5 % Loading files")
 
-    form.showStatus("Saving Outputs")
+        if "zip" in self.filePaths:
+            self.bands = self.filer.loadZip(self.filePaths)
+            self.satType = self.bands["sat_type"]
+            del self.bands["sat_type"]
+        else:
+            self.bands = self.filer.loadBands(self.filePaths)
+        
+        self.parent.updateProgress(15, "15% Files ready, checking for errors")
 
-    filer.saveAll(results)
+        if self.bands["Error"]:
+            self.error = self.bands["Error"]
+            return True
+        del self.bands["Error"]
+        return True
+    
+    def finished(self, results = None):
 
-    form.showStatus("Displaying Outputs")
+        if(not(results)):
+            self.error = "Aborted"
+        if(self.error):
+            self.parent.setError(self.error)
+        self.parent.updateProgress(20, "20% Starting calculations")
 
-    resultNames = []
-    for res in resultStates:
-        resultNames.append(res[1])
+class postprocess(QgsTask):
 
-    if displayResults:
-        displayOnScreen(resultStates, resultNames, filer)
+    def __init__(self, proc_object, parent):
 
-    form.showStatus("Finished")
+        QgsTask.__init__(self, "Outputs Processor")
+
+        self.proc_object = proc_object
+        self.parent = parent
+        self.error = None
+    
+    def run(self):
+
+        self.filer = self.proc_object.filer
+        self.filer.saveAll(self.proc_object.results)
+        self.parent.updateProgress(94, "94% Files Saved")
+        return True
+
+    def finished(self, results = None):
+
+        if(not(results)):
+            self.error = "Aborted"
+        if(self.error):
+            self.parent.setError(self.error)
+        self.parent.done = True
+        self.parent.updateProgress(95, "95% Finished, Displaying Outputs")
+
+class CarrierTask(QgsTask):
+
+    def __init__(self, form):
+        QgsTask.__init__(self, "LST plugin base task")
+        self.form = form
+        self.error = None
+        self.done = False
+        self.notification = "If you're still seeing this, something's gone very wrong"
+    
+    def run(self):
+        while(not(self.done) and not(self.error)):
+            time.sleep(1)
+        return True
+    
+    def finished(self, result = None):
+
+        self.setProgress(100)
+        if(not(result)):
+            self.error = "Crash"
+        if(self.error):
+            self.form.showError(self.error)
+        self.form.endRun()
+    
+    def updateProgress(self, num, text):
+
+        self.notification = text
+        self.setProgress(num)
+    
+    def setError(self, msg):
+
+        if(self.error):
+            return
+        self.error = msg
+        self.done = True
+        self.finished(True)
