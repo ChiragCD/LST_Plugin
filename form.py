@@ -236,9 +236,9 @@ class MainWindow(QMainWindow):
             return
         self.running = True
 
-        resultStates = []
+        self.resultStates = []
         for box in self.checkboxes:
-            resultStates.append((box[0].isChecked(), box[1].text() or box[0].text()))
+            self.resultStates.append((box[0].isChecked(), box[1].text() or box[0].text()))
 
         satType = (
             self.radios[0].text()
@@ -249,8 +249,9 @@ class MainWindow(QMainWindow):
         self.start_time = time.time()
 
         self.virtualTask = mainLST.CarrierTask(self)
-        self.preproc = mainLST.preprocess(self.filePaths, resultStates, satType, self.virtualTask)
-        self.proc = procedures.processor(self.preproc, resultStates, self.virtualTask)
+        self.virtualTask.progressChanged.connect(self.update_progress)
+        self.preproc = mainLST.preprocess(self.filePaths, self.resultStates, satType, self.virtualTask)
+        self.proc = procedures.processor(self.preproc, self.resultStates, self.virtualTask)
         self.postproc = mainLST.postprocess(self.proc, self.virtualTask)
         self.virtualTask.addSubTask(self.preproc)
         self.virtualTask.addSubTask(self.proc, [self.preproc])
@@ -259,21 +260,16 @@ class MainWindow(QMainWindow):
 
         return
     
+    def update_progress(self):
+        
+        self.showStatus(self.virtualTask.notification)
+    
     def endRun(self):
 
-        print("Calling endrun")
-        # if(self.preproc.progress() != 100):
-        #     print("Cancelling preproc")
-        #     self.preproc.cancel()
-        # if(self.proc.progress() != 100):
-        #     print("Cancelling proc")
-        #     self.proc.cancel()
-        # if(self.postproc.progress() != 100):
-        #     print("Cancelling postproc")
-        #     self.postproc.cancel()
         if(self.virtualTask.progress() != 100):
-            print("Cancelling virtual", self.virtualTask.canCancel())
             self.virtualTask.cancel()
+        else:
+            mainLST.displayOnScreen(self.resultStates, self.postproc.filer)
         time_taken = int(time.time() - self.start_time)
         self.showStatus("Finished, process time - " + str(time_taken) + " seconds")
         self.running = False
@@ -311,10 +307,6 @@ class MainWindow(QMainWindow):
 
         text = str(text)
         self.status.showMessage(text, 60000)
-    
-    def setError(self, msg):
-
-        self.error = msg
 
     def showError(self, err):
 
@@ -328,6 +320,5 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
 
-        print("closing")
         if(self.running):
             self.endRun()

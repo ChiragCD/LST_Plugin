@@ -61,11 +61,15 @@ class LandSurfaceTemperature(object):
         window.show()
 
 
-def displayOnScreen(resultStates, resultNames, filer):
+def displayOnScreen(resultStates, filer):
 
     """
     Display generated outputs as layers on the interface
     """
+
+    resultNames = []
+    for res in resultStates:
+        resultNames.append(res[1])
 
     for i in range(6):
         if resultStates[i][0]:
@@ -95,21 +99,23 @@ class preprocess(QgsTask):
         """
 
         self.filer = fileio.fileHandler()
-        # processor = procedures.processor()
-
-        self.setProgress(10)
+        self.parent.updateProgress(0, "0 % Starting, setting optional out folder")
 
         if("output" in self.filePaths):
             self.filer.prepareOutFolder(self.filePaths["output"])
             del self.filePaths["output"]
+        
+        self.parent.updateProgress(5, "5 % Loading files")
 
         if "zip" in self.filePaths:
-            self.setProgress(12)
             self.bands = self.filer.loadZip(self.filePaths)
             self.satType = self.bands["sat_type"]
             del self.bands["sat_type"]
         else:
             self.bands = self.filer.loadBands(self.filePaths)
+        
+        self.parent.updateProgress(15, "15% Files ready, checking for errors")
+
         if self.bands["Error"]:
             self.error = self.bands["Error"]
             return True
@@ -118,13 +124,11 @@ class preprocess(QgsTask):
     
     def finished(self, results = None):
 
-        print("Ending pre")
-        self.setProgress(100)
         if(not(results)):
-            self.error = "Pre-Processing Crashed"
+            self.error = "Aborted"
         if(self.error):
             self.parent.setError(self.error)
-        print("Error", self.error)
+        self.parent.updateProgress(20, "20% Starting calculations")
 
 class postprocess(QgsTask):
 
@@ -139,39 +143,27 @@ class postprocess(QgsTask):
     def run(self):
 
         self.filer = self.proc_object.filer
-
         self.filer.saveAll(self.proc_object.results)
-        self.setProgress(90)
+        self.parent.updateProgress(94, "94% Files Saved")
         return True
-
-        resultNames = []
-        for res in resultStates:
-            resultNames.append(res[1])
-
-        if displayResults:
-            displayOnScreen(resultStates, resultNames, filer)
-
-        form.showStatus("Finished")
-        self.setProgress(99)
 
     def finished(self, results = None):
 
-        print("Ending post")        
-        self.setProgress(100)
         if(not(results)):
-            self.error = "Post-Processing Crashed"
+            self.error = "Aborted"
         if(self.error):
             self.parent.setError(self.error)
         self.parent.done = True
-        print("Error", self.error)
+        self.parent.updateProgress(95, "95% Finished, Displaying Outputs")
 
 class CarrierTask(QgsTask):
 
     def __init__(self, form):
-        QgsTask.__init__(self, "Carrier for other plugin tasks")
+        QgsTask.__init__(self, "LST plugin base task")
         self.form = form
         self.error = None
         self.done = False
+        self.notification = "If you're still seeing this, something's gone very wrong"
     
     def run(self):
         while(not(self.done) and not(self.error)):
@@ -180,23 +172,21 @@ class CarrierTask(QgsTask):
     
     def finished(self, result = None):
 
-        print("Carrier finishing")
-        print("Carrier Error status", self.error)
         self.setProgress(100)
         if(not(result)):
-            print("Carrier Crash")
-            self.error = "Crash"        
-        # print("Finishing", self.error)
+            self.error = "Crash"
         if(self.error):
-            print("Carrier printing " + self.error)
             self.form.showError(self.error)
-        print("Carrier calling endrun")
         self.form.endRun()
+    
+    def updateProgress(self, num, text):
+
+        self.notification = text
+        self.setProgress(num)
     
     def setError(self, msg):
 
         if(self.error):
-            print("Error filled Virtual", self.error)
             return
         self.error = msg
         self.done = True
