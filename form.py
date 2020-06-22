@@ -69,6 +69,7 @@ class MainWindow(QMainWindow):
         zipLayout = QHBoxLayout()
         pathField = QLineEdit()
         pathField.setText("Compressed File")
+        pathField.textChanged.connect(lambda : self.textInput(pathField, "zip"))
         zipLayout.addWidget(pathField)
         selband = QPushButton()
         selband.setText("Select Compressed File")
@@ -121,6 +122,7 @@ class MainWindow(QMainWindow):
         sfoldlayout = QHBoxLayout()
         pathFold = QLineEdit()
         pathFold.setText("Output Folder Destination")
+        pathFold.textChanged.connect(lambda : self.textInput(pathFold, "output"))
         sfoldlayout.addWidget(pathFold)
         selfold = QPushButton()
         selfold.setText("Select Output Destination")
@@ -162,9 +164,11 @@ class MainWindow(QMainWindow):
 
         pathField = QLineEdit()
         pathField.setText(band)
+        pathField.textChanged.connect(lambda : self.textInput(pathField, band))
         hlayout.addWidget(pathField)
 
         selLayer = QComboBox()
+        selLayer.setFixedWidth(200)
         selLayer.addItem("Select a Layer")
         self.layerInfor["Select a Layer"] = "Select a layer"
 
@@ -192,6 +196,9 @@ class MainWindow(QMainWindow):
         """
 
         if addr == "Select a layer":
+            pathField.setText(band)
+            if(band in self.filePaths):
+                del self.filePaths[band]
             return
         if not (addr.lower().endswith(".tif")) and not (addr.lower().endswith(".shp")):
             lastmatch = addr.lower().rfind(".tif")
@@ -223,6 +230,18 @@ class MainWindow(QMainWindow):
             return
         pathField.setText(fp)
         self.filePaths[name] = fp
+    
+    def textInput(self, sender, key):
+
+        text = sender.text()
+        if(key in self.filePaths):
+            del self.filePaths[key]
+        if(text == key):
+            return
+        if(text == ""):
+            sender.setText(key)
+            return
+        self.filePaths[key] = text
 
     def goFunc(self):
 
