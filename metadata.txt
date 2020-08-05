@@ -11,9 +11,10 @@ about=This plugin calculates LST values from input Landsat 5 or 8 data.
 	Required bands are Thermal Infrared, Near Infrared, and Red.
 	The procedure followed is as described in this paper -
 	Avdan and Jovanovska, 2016 - Algorithm for Automated Mapping of Land Surface Temperature Using LANDSAT 8 Satellite Data.
+	This plugin requires that numpy be installed.
 version=1.0
 author=Chirag C D, Nilesh Kumar Gupta
-email=f20180277@pilani.bits-pilani.ac.in,f20180233@goa.bits-pilani.ac.in
+email=Chirag8CD@gmail.com,f20180233@goa.bits-pilani.ac.in
 repository=https://github.com/ChiragCD/LST_Plugin
 
 ## End of mandatory metadata
@@ -21,9 +22,11 @@ repository=https://github.com/ChiragCD/LST_Plugin
 ## Optional metadata :
 
 category=Raster
+tracker=https://github.com/ChiragCD/LST_Plugin/issues
+license=GPL-2.0
 icon=icon.png
 experimental=True
-tags=LST, NDVI, TOA Radiance
-## plugin_dependencies=None
+tags=LST, NDVI, TOA Radiance, Land Surface Temperature
+##plugin_dependencies=numpy
 
 ## End of optional metadata
