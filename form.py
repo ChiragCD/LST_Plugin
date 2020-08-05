@@ -221,8 +221,9 @@ class MainWindow(QMainWindow):
         self.filePaths[band] = fp[0]
 
     def getFolder(self, pathField, name):
+
         """
-        Get path of foleder selected
+        Get path of folder selected
         """
 
         fp = QFileDialog.getExistingDirectory()
@@ -280,10 +281,18 @@ class MainWindow(QMainWindow):
         return
     
     def update_progress(self):
+
+        """
+        Display the current status on screen
+        """
         
         self.showStatus(self.virtualTask.notification)
     
     def endRun(self):
+
+        """
+        Handle interruptions and close threads
+        """
 
         if(self.virtualTask.progress() != 100):
             self.virtualTask.cancel()
@@ -338,6 +347,10 @@ class MainWindow(QMainWindow):
         messageBox.critical(None, "", err)
 
     def closeEvent(self, event):
+
+        """
+        Potential update - handle events differently
+        """
 
         if(self.running):
             self.endRun()

@@ -6,7 +6,7 @@ from qgis.core import *
 
 import time
 
-from . import resources, form, procedures, fileio
+from . import form, resources, fileio
 
 ## Main class: LSTplugin
 
@@ -79,6 +79,10 @@ def displayOnScreen(resultStates, filer):
 
 class preprocess(QgsTask):
 
+    """
+    This task obtains data from files
+    """
+
     def __init__(self, filePaths, resultStates, satType, parent):
 
         QgsTask.__init__(self, "Inputs Processor")
@@ -124,6 +128,10 @@ class preprocess(QgsTask):
     
     def finished(self, results = None):
 
+        """
+        Called when complete or if interrupted.
+        """
+
         if(not(results)):
             self.error = "Aborted"
         if(self.error):
@@ -131,6 +139,10 @@ class preprocess(QgsTask):
         self.parent.updateProgress(20, "20% Starting calculations")
 
 class postprocess(QgsTask):
+
+    """
+    This task saves outputs
+    """
 
     def __init__(self, proc_object, parent):
 
@@ -142,12 +154,20 @@ class postprocess(QgsTask):
     
     def run(self):
 
+        """
+        Main processing element, called when calculations are complete
+        """
+
         self.filer = self.proc_object.filer
         self.filer.saveAll(self.proc_object.results)
         self.parent.updateProgress(94, "94% Files Saved")
         return True
 
     def finished(self, results = None):
+
+        """
+        Called if interrupted or when results have been saved
+        """
 
         if(not(results)):
             self.error = "Aborted"
@@ -158,6 +178,11 @@ class postprocess(QgsTask):
 
 class CarrierTask(QgsTask):
 
+    """
+    This task is a dummy, intended to manage its subtasks,
+    i.e. preprocess, processor and postprocess.
+    """
+
     def __init__(self, form):
         QgsTask.__init__(self, "LST plugin base task")
         self.form = form
@@ -166,11 +191,20 @@ class CarrierTask(QgsTask):
         self.notification = "If you're still seeing this, something's gone very wrong"
     
     def run(self):
+
+        """
+        Do nothing, unless required to exit
+        """
+
         while(not(self.done) and not(self.error)):
             time.sleep(1)
         return True
     
     def finished(self, result = None):
+
+        """
+        Handle interruptions, close thread
+        """
 
         self.setProgress(100)
         if(not(result)):
@@ -181,10 +215,18 @@ class CarrierTask(QgsTask):
     
     def updateProgress(self, num, text):
 
+        """
+        Intermediate point that stores updates to be displayed
+        """
+
         self.notification = text
         self.setProgress(num)
     
     def setError(self, msg):
+
+        """
+        Notify with an error message
+        """
 
         if(self.error):
             return

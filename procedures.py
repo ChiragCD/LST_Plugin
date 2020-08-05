@@ -207,8 +207,6 @@ class processor(QgsTask):
             required - array of tuples of length 6, contains boolean and the name associated with layer in tuple
                         [toa, bt, ndvi, pv, lse, lst] in order.
             form - user interfacing element
-        Returns:
-            A dict of numpy arrays, with a key "Error" holding error message, if any
         """
 
         self.bands = self.input_object.bands
@@ -269,6 +267,10 @@ class processor(QgsTask):
         return True
     
     def finished(self, result = None):
+
+        """
+        Handle interruptions and exceptions, if any
+        """
 
         if(not(result)):
             self.error = "Aborted"

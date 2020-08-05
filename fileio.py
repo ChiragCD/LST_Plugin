@@ -2,7 +2,7 @@ import numpy as np
 import gdal, os, tarfile
 from zipfile import ZipFile
 import processing
-from qgis.core import QgsVectorLayer, QgsRasterLayer, QgsCoordinateTransform, QgsProject
+from qgis.core import QgsVectorLayer, QgsRasterLayer
 
 gdal.UseExceptions()
 
@@ -236,6 +236,7 @@ class fileHandler(object):
         """
         Make a new directory under the operating folder, for outputs
         """
+        
         if not opFolder:
             outfolder = self.folder + "/LandSurfaceTemperature"
             i = 1
