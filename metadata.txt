@@ -4,7 +4,7 @@
 
 ## Mandatory plugin details :
 
-name=LandSurfaceTemperature
+name=LandSurfaceTemperatureV3
 qgisMinimumVersion=3.0
 description=LST estimation from landsat 5 and 8 data.
 about=This plugin calculates LST values from input Landsat 5 or 8 data.
@@ -27,6 +27,6 @@ license=GPL-2.0
 icon=icon.png
 experimental=True
 tags=LST, NDVI, TOA Radiance, Land Surface Temperature
-##plugin_dependencies=numpy
+plugin_dependencies=numpy
 
 ## End of optional metadata

@@ -11,7 +11,7 @@ from . import form, resources, fileio
 ## Main class: LSTplugin
 
 
-class LandSurfaceTemperature(object):
+class LandSurfaceTemperatureV3(object):
 
     """Main plugin object"""
 
