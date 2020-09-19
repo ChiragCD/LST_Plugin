@@ -8,9 +8,11 @@ name=LandSurfaceTemperatureV3
 qgisMinimumVersion=3.0
 description=LST estimation from landsat 5 and 8 data.
 about=This plugin calculates LST values from input Landsat 5 or 8 data.
+	Alternatively (or in addition), NDVI, TOA radiance, Land Surface Emissivity, etc can also be obtained.
 	Required bands are Thermal Infrared, Near Infrared, and Red.
 	The procedure followed is as described in this paper -
 	Avdan and Jovanovska, 2016 - Algorithm for Automated Mapping of Land Surface Temperature Using LANDSAT 8 Satellite Data.
+	Outputs are stored in the input folder by default, this can be changed as required.
 	This plugin requires that numpy be installed.
 version=1.0
 author=Chirag C D, Nilesh Kumar Gupta
